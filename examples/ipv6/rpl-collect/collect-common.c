@@ -50,7 +50,7 @@ static unsigned long time_offset;
 static int send_active = 1;
 
 #ifndef PERIOD
-#define PERIOD 60
+#define PERIOD 1
 #endif
 #define RANDWAIT (PERIOD)
 

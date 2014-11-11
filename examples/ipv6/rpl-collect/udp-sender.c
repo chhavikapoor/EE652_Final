@@ -40,6 +40,8 @@
 #endif
 #include "collect-common.h"
 #include "collect-view.h"
+#include "list.h"
+#include "packetstack.h" 
 
 #include <stdio.h>
 #include <string.h>
@@ -50,6 +52,8 @@
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
+
+extern list_t mylist_list;
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
 
@@ -216,6 +220,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   print_local_addresses();
 
+
+
   /* new connection with remote host */
   client_conn = udp_new(NULL, UIP_HTONS(UDP_SERVER_PORT), NULL);
   udp_bind(client_conn, UIP_HTONS(UDP_CLIENT_PORT));
@@ -224,6 +230,10 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PRINT6ADDR(&client_conn->ripaddr);
   PRINTF(" local/remote port %u/%u\n",
         UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
+
+
+  
+
 
   while(1) {
     PROCESS_YIELD();
