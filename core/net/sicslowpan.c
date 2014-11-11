@@ -66,6 +66,20 @@
 #include "net/rime.h"
 #include "net/sicslowpan.h"
 #include "net/netstack.h"
+#include "list.h"
+
+typedef struct chhavi_list;
+
+struct chhavi_list{
+  struct chhavi_list* next;
+  int number;
+} element1, element2;
+
+LIST(mylist);
+ //static int var_chhavi = 2;
+ //static int var_2_chhavi = 4;
+ static int init_flag = 0;
+
 
 #if UIP_CONF_IPV6
 
@@ -73,6 +87,10 @@
 
 #define DEBUG DEBUG_NONE
 #include "net/uip-debug.h"
+
+ list_t test_list;
+ #define MAX_QUEUE_LENGTH 2
+ int packets_pushed = 0;
 #if DEBUG
 /* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
 uint8_t p;
@@ -256,6 +274,10 @@ static struct timer reass_timer;
 #define sicslowpan_buf uip_buf
 #define sicslowpan_len uip_len
 #endif /* SICSLOWPAN_CONF_FRAG */
+
+
+
+
 
 /*-------------------------------------------------------------------------*/
 /* Rime Sniffer support for one single listener to enable powertrace of IP */
@@ -488,6 +510,7 @@ uncompress_addr(uip_ipaddr_t *ipaddr, uint8_t const prefix[],
 static void
 compress_hdr_hc06(rimeaddr_t *rime_destaddr)
 {
+  printf("we are in compress_hdr_hc06\n");
   uint8_t tmp, iphc0, iphc1;
 #if DEBUG
   { uint16_t ndx;
@@ -1356,10 +1379,12 @@ send_packet(rimeaddr_t *dest)
 static uint8_t
 output(uip_lladdr_t *localdest)
 {
+  printf("We are inside output function\n");
   int framer_hdrlen;
 
   /* The MAC address of the destination of the packet */
   rimeaddr_t dest;
+  
 
   /* Number of bytes processed. */
   uint16_t processed_ip_out_len;
@@ -1370,7 +1395,9 @@ output(uip_lladdr_t *localdest)
 
   /* reset rime buffer */
   packetbuf_clear();
-  rime_ptr = packetbuf_dataptr();
+
+  uint8_t *temp_rime_ptr = NULL; 
+   rime_ptr = packetbuf_dataptr();     //rime_ptr will point to packetbuf
 
   packetbuf_set_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS,
                      SICSLOWPAN_MAX_MAC_TRANSMISSIONS);
@@ -1408,22 +1435,29 @@ output(uip_lladdr_t *localdest)
   }
   
   PRINTFO("sicslowpan output: sending packet len %d\n", uip_len);
+  printf("sicslowpan output: sending packet len %d\n", uip_len);
 
   if(uip_len >= COMPRESSION_THRESHOLD) {
     /* Try to compress the headers */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1
+    printf("Compression HC1\n");
     compress_hdr_hc1(&dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1 */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6
+    printf("Compression IPv6\n");
     compress_hdr_ipv6(&dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6 */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06
+    printf("Compression HC06\n");
     compress_hdr_hc06(&dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06 */
   } else {
+    printf("Compression none of above\n");
     compress_hdr_ipv6(&dest);
   }
   PRINTFO("sicslowpan output: header of len %d\n", rime_hdr_len);
+ 
+  printf("sicslowpan output: header of len %d\n", rime_hdr_len);
 
   /* Calculate NETSTACK_FRAMER's header length, that will be added in the NETSTACK_RDC.
    * We calculate it here only to make a better decision of whether the outgoing packet
@@ -1449,6 +1483,8 @@ output(uip_lladdr_t *localdest)
 
   if((int)uip_len - (int)uncomp_hdr_len > (int)MAC_MAX_PAYLOAD - framer_hdrlen - (int)rime_hdr_len) {
 #if SICSLOWPAN_CONF_FRAG
+
+    printf("sending packet with fragmentation\n");
     struct queuebuf *q;
     /*
      * The outbound IPv6 packet is too large to fit into a single 15.4
@@ -1560,9 +1596,85 @@ output(uip_lladdr_t *localdest)
      * The packet does not need to be fragmented
      * copy "payload" and send
      */
+
+    //This is where we are inserting the list 
+    printf("sending packet without fragmentation\n");
+    printf("we can insert the queue over here to buffer the packet\n");
+
+
+    printf("creating a list\n");
+    printf("initializing the list\n");
+    printf("this is the value of the init flag %d\n", init_flag);
+    if(init_flag == 0){
+      init_flag = 1;
+     list_init(mylist);
+    }
+    
+
+    //test_list = &mylist;
+    
+   
+    
+    struct chhavi_list* temp_ptr = NULL;
+    struct chhavi_list* temp_ptr_2 = NULL;
+
+    
+    element1.number = 2;
+    element2.number = 4;
+
+    printf("this is the first pointer %p\n", &element1);
+     printf("this is the second pointer %p\n", &element2);
+ 
+    
+   
+    if(packets_pushed <=MAX_QUEUE_LENGTH){
+    printf("The number of packets pushed is %d\n",packets_pushed);
+    packets_pushed ++;
+
+    printf("A packet is being pushed\n");
+   
+    printf("this is the variable we pushed %d\n", element1.number);
+    list_push(mylist, &element1);
+    printf("this is the variable we pushed %d\n", element2.number);
+    list_push(mylist, &element2);
+    printf("this is the length of the list %d\n", list_length(mylist));
+    }
+    else{
+      printf("we are setting the packet_pushed count to 0\n");
+      packets_pushed = 0;
+    }
+    //if(packets_pushed == 2){
+    temp_ptr = list_pop(mylist);
+
+     printf("this is the length of the list after popping 1 %d\n", list_length(mylist));
+    temp_ptr_2 = list_pop(mylist);
+    //}
+
+     printf("this is the length of the list after popping 2 %d\n", list_length(mylist));
+
+    if(temp_ptr!=NULL){
+      printf("this is the pointer we received %p\n", temp_ptr);
+      printf("printing the popped variable %d\n", (temp_ptr)->number);
+    }
+    else{
+    printf("we received a null pointer from the first pop funciton\n");
+    }
+
+
+   if(temp_ptr_2!=NULL){
+      
+      printf("this is the pointer we received %p\n", temp_ptr_2);  
+      printf("printing the popped variable %d\n", (temp_ptr_2)->number);
+    
+    }
+    else{
+    printf("we received a null pointer from the second pop funciton\n");
+    }
+    //rime ptr points to the packet to be sent out with the compressed header
     memcpy(rime_ptr + rime_hdr_len, (uint8_t *)UIP_IP_BUF + uncomp_hdr_len,
            uip_len - uncomp_hdr_len);
     packetbuf_set_datalen(uip_len - uncomp_hdr_len + rime_hdr_len);
+  
     send_packet(&dest);
   }
   return 1;

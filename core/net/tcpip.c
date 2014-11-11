@@ -133,7 +133,8 @@ tcpip_set_outputfunc(uint8_t (*f)(uip_lladdr_t *))
 static uint8_t (* outputfunc)(void);
 uint8_t
 tcpip_output(void)
-{
+{ 
+  printf("We are inside tcp_output\n");
   if(outputfunc != NULL) {
     return outputfunc();
   }
@@ -539,6 +540,7 @@ tcpip_input(void)
 void
 tcpip_ipv6_output(void)
 {
+  printf("We are inside tcp_ipv6_output\n");
   uip_ds6_nbr_t *nbr = NULL;
   uip_ipaddr_t *nexthop;
 

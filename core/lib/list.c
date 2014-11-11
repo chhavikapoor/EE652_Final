@@ -162,7 +162,7 @@ list_add(list_t list, void *item)
  */
 void
 list_push(list_t list, void *item)
-{
+{  
   /*  struct list *l;*/
 
   /* Make sure not to add the same element twice */

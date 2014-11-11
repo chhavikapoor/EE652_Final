@@ -672,6 +672,7 @@ uip_add_rcv_nxt(uint16_t n)
 void
 uip_process(uint8_t flag)
 {
+  printf("We are inside uip_process\n");
   register struct uip_conn *uip_connr = uip_conn;
 
 #if UIP_UDP
