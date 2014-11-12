@@ -90,7 +90,7 @@ LIST(mylist);
 
  list_t test_list;
  #define MAX_QUEUE_LENGTH 2
- int packets_pushed = 0;
+ //int packets_pushed = 0;
 #if DEBUG
 /* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
 uint8_t p;
@@ -1599,78 +1599,9 @@ output(uip_lladdr_t *localdest)
 
     //This is where we are inserting the list 
     printf("sending packet without fragmentation\n");
-    printf("we can insert the queue over here to buffer the packet\n");
+    /*printf("we can insert the queue over here to buffer the packet\n");*/
 
 
-    printf("creating a list\n");
-    printf("initializing the list\n");
-    printf("this is the value of the init flag %d\n", init_flag);
-    if(init_flag == 0){
-      init_flag = 1;
-     list_init(mylist);
-    }
-    
-
-    //test_list = &mylist;
-    
-   
-    
-    struct chhavi_list* temp_ptr = NULL;
-    struct chhavi_list* temp_ptr_2 = NULL;
-
-    
-    element1.number = 2;
-    element2.number = 4;
-
-    printf("this is the first pointer %p\n", &element1);
-     printf("this is the second pointer %p\n", &element2);
- 
-    
-   
-    if(packets_pushed <=MAX_QUEUE_LENGTH){
-    printf("The number of packets pushed is %d\n",packets_pushed);
-    packets_pushed ++;
-
-    printf("A packet is being pushed\n");
-   
-    printf("this is the variable we pushed %d\n", element1.number);
-    list_push(mylist, &element1);
-    printf("this is the variable we pushed %d\n", element2.number);
-    list_push(mylist, &element2);
-    printf("this is the length of the list %d\n", list_length(mylist));
-    }
-    else{
-      printf("we are setting the packet_pushed count to 0\n");
-      packets_pushed = 0;
-    }
-    //if(packets_pushed == 2){
-    temp_ptr = list_pop(mylist);
-
-     printf("this is the length of the list after popping 1 %d\n", list_length(mylist));
-    temp_ptr_2 = list_pop(mylist);
-    //}
-
-     printf("this is the length of the list after popping 2 %d\n", list_length(mylist));
-
-    if(temp_ptr!=NULL){
-      printf("this is the pointer we received %p\n", temp_ptr);
-      printf("printing the popped variable %d\n", (temp_ptr)->number);
-    }
-    else{
-    printf("we received a null pointer from the first pop funciton\n");
-    }
-
-
-   if(temp_ptr_2!=NULL){
-      
-      printf("this is the pointer we received %p\n", temp_ptr_2);  
-      printf("printing the popped variable %d\n", (temp_ptr_2)->number);
-    
-    }
-    else{
-    printf("we received a null pointer from the second pop funciton\n");
-    }
-    //rime ptr points to the packet to be sent out with the compressed header
     memcpy(rime_ptr + rime_hdr_len, (uint8_t *)UIP_IP_BUF + uncomp_hdr_len,
            uip_len - uncomp_hdr_len);
     packetbuf_set_datalen(uip_len - uncomp_hdr_len + rime_hdr_len);

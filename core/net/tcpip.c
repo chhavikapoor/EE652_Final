@@ -540,11 +540,12 @@ tcpip_input(void)
 void
 tcpip_ipv6_output(void)
 {
-  printf("We are inside tcp_ipv6_output\n");
+  //printf("We are inside tcp_ipv6_output\n");
   uip_ds6_nbr_t *nbr = NULL;
   uip_ipaddr_t *nexthop;
 
   if(uip_len == 0) {
+    //printf("Returning from tcp_ipv6_output as uip_len =0\n");
     return;
   }
 
