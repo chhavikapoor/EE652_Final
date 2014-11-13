@@ -57,6 +57,9 @@ static int send_active = 1;
 /*---------------------------------------------------------------------------*/
 PROCESS(collect_common_process, "collect common process");
 AUTOSTART_PROCESSES(&collect_common_process);
+
+PROCESS(test_process, "test process");
+AUTOSTART_PROCESSES(&test_process);
 /*---------------------------------------------------------------------------*/
 static unsigned long
 get_time(void)
@@ -104,7 +107,7 @@ collect_common_recv(const rimeaddr_t *originator, uint8_t seqno, uint8_t hops,
   leds_blink();
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(collect_common_process, ev, data)
+PROCESS_THREAD(collect_common_process, ev, data)    //this thread is responsible for sending a packet for queuing
 {
   static struct etimer period_timer, wait_timer;
   PROCESS_BEGIN();
@@ -112,10 +115,10 @@ PROCESS_THREAD(collect_common_process, ev, data)
   collect_common_net_init();
 
   /* Send a packet every 60-62 seconds. */
-  etimer_set(&period_timer, CLOCK_SECOND * PERIOD);
+  etimer_set(&period_timer, CLOCK_SECOND * PERIOD);   //setting the period time to the value given by argument 2
   while(1) {
-    PROCESS_WAIT_EVENT();
-    if(ev == serial_line_event_message) {
+    PROCESS_WAIT_EVENT();                            
+    if(ev == serial_line_event_message) {    //some sort of message will be sent. 
       char *line;
       line = (char *)data;
       if(strncmp(line, "collect", 7) == 0 ||
@@ -169,3 +172,32 @@ PROCESS_THREAD(collect_common_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
+
+
+PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sending a packet for queuing
+{
+  static struct etimer period_timer, wait_timer;
+  PROCESS_BEGIN();
+
+  collect_common_net_init();
+
+  /* Send a packet every 60-62 seconds. */
+  etimer_set(&period_timer, CLOCK_SECOND * PERIOD);   //setting the period time to the value given by argument 2
+  while(1) {
+    PROCESS_WAIT_EVENT();                            
+    
+    if(ev == PROCESS_EVENT_TIMER) {
+      if(data == &period_timer) {
+        etimer_reset(&period_timer);
+        etimer_set(&wait_timer, random_rand() % (CLOCK_SECOND * RANDWAIT));
+      } else if(data == &wait_timer) {
+        if(send_active) {
+          /* Time to send the data */
+          printf("Hey this is a new thread\n");
+        }
+      }
+    }
+  }
+
+  PROCESS_END();
+}

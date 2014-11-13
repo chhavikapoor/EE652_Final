@@ -58,8 +58,8 @@ static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
 
 /*---------------------------------------------------------------------------*/
-PROCESS(udp_client_process, "UDP client process");
-AUTOSTART_PROCESSES(&udp_client_process, &collect_common_process);
+PROCESS(udp_client_process, "UDP client process");   // we are creating a process over here
+AUTOSTART_PROCESSES(&udp_client_process, &collect_common_process, &test_process); //we are starting the udp client process and the collect common process.
 /*---------------------------------------------------------------------------*/
 void
 collect_common_set_sink(void)
@@ -244,4 +244,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   PROCESS_END();
 }
+
+
 /*---------------------------------------------------------------------------*/
