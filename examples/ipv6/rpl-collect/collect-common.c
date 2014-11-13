@@ -42,6 +42,8 @@
 #include "dev/leds.h"
 #include "collect-common.h"
 
+ 
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -50,7 +52,7 @@ static unsigned long time_offset;
 static int send_active = 1;
 
 #ifndef PERIOD
-#define PERIOD 1
+#define PERIOD 10
 #endif
 #define RANDWAIT (PERIOD)
 
@@ -58,8 +60,9 @@ static int send_active = 1;
 PROCESS(collect_common_process, "collect common process");
 AUTOSTART_PROCESSES(&collect_common_process);
 
-PROCESS(test_process, "test process");
-AUTOSTART_PROCESSES(&test_process);
+
+
+
 /*---------------------------------------------------------------------------*/
 static unsigned long
 get_time(void)
@@ -174,30 +177,4 @@ PROCESS_THREAD(collect_common_process, ev, data)    //this thread is responsible
 /*---------------------------------------------------------------------------*/
 
 
-PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sending a packet for queuing
-{
-  static struct etimer period_timer, wait_timer;
-  PROCESS_BEGIN();
 
-  collect_common_net_init();
-
-  /* Send a packet every 60-62 seconds. */
-  etimer_set(&period_timer, CLOCK_SECOND * PERIOD);   //setting the period time to the value given by argument 2
-  while(1) {
-    PROCESS_WAIT_EVENT();                            
-    
-    if(ev == PROCESS_EVENT_TIMER) {
-      if(data == &period_timer) {
-        etimer_reset(&period_timer);
-        etimer_set(&wait_timer, random_rand() % (CLOCK_SECOND * RANDWAIT));
-      } else if(data == &wait_timer) {
-        if(send_active) {
-          /* Time to send the data */
-          printf("Hey this is a new thread\n");
-        }
-      }
-    }
-  }
-
-  PROCESS_END();
-}

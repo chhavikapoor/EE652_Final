@@ -54,4 +54,7 @@ void collect_common_set_send_active(int active);
 PROCESS_NAME(collect_common_process);
 PROCESS_NAME(test_process);
 
+
+
+
 #endif /* __COLLECT_COMMON_H__ */

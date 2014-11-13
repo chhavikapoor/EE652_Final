@@ -46,7 +46,14 @@ extern uint16_t uip_slen;
 
 #include <string.h>
 
-#define MAX_STACK_LENGTH 1
+#define PERIOD_POP 1
+#define RANDWAIT (PERIOD_POP)
+int pop_active = 1;
+
+PROCESS(test_process, "test process");
+AUTOSTART_PROCESSES(&test_process);
+
+#define MAX_STACK_LENGTH 5
 
 
 int init_flag = 0;
@@ -100,9 +107,10 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
 		      const uip_ipaddr_t *toaddr, uint16_t toport)
 {
   int length;
-  printf("initializing the list\n");
-  printf("this is the value of the init flag %d\n", init_flag);
+  
     if(init_flag == 0){
+      printf("initializing the list\n");
+      printf("this is the value of the init flag %d\n", init_flag);
       init_flag = 1;
      list_init(mylist);
     }
@@ -118,43 +126,75 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
 
    if(packets_pushed < MAX_STACK_LENGTH){
      packets_pushed ++ ;
+     printf("We are pushing a packet\n");
      list_push(mylist, queue_element);
-     printf("This is the list length after pushing a packet %d\n", list_length(mylist));
+     //printf("This is the list length after pushing a packet %d\n", list_length(mylist));
     }
 
-   else{ 
-    length = list_length(mylist);
-      printf("this is the length of the list %d\n", length);
-      while(length > 0){
-        struct chhavi_list* temp_element = NULL;
-        printf("This is the list length. Popping a packet %d\n", length);
+   
+}
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sending a packet for queuing
+{
+  static struct etimer period_timer, wait_timer;
+  int length_pop = 0;
+  PROCESS_BEGIN();
 
-        temp_element = (struct chhavi_list*)list_pop(mylist);
-        length = list_length(mylist);
-        packets_pushed -- ;
+  collect_common_net_init();
 
-        if(temp_element!= NULL){
+  /* Send a packet every 60-62 seconds. */
+  etimer_set(&period_timer, CLOCK_SECOND * PERIOD_POP);   //setting the period time to the value given by argument 2
+  while(1) {
+    PROCESS_WAIT_EVENT();                            
+    
+    if(ev == PROCESS_EVENT_TIMER) {
+      if(data == &period_timer) {
+        etimer_reset(&period_timer);
+        etimer_set(&wait_timer, random_rand() % (CLOCK_SECOND * RANDWAIT));
+      } else if(data == &wait_timer) {
+          if(pop_active) {
+            /* Time to send the data */
+            //printf("Hey this is a new thread. We are popping elements\n");
+       
+            length_pop = list_length(mylist);
+            //printf("this is the length of the list %d\n", length_pop);
+            if(length_pop > 0){
+            struct chhavi_list* temp_element = NULL;
+            //printf("This is the list length. Popping a packet %d\n", length_pop);
 
-          uip_ipaddr_t curaddr;
-          uint16_t curport;
+            temp_element = (struct chhavi_list*)list_pop(mylist);
+            //length_pop = list_length(mylist);
+            packets_pushed -- ;
 
-          if(temp_element->toaddr != NULL) {
-          /* Save current IP addr/port. */
-            uip_ipaddr_copy(&curaddr, &(temp_element->c)->ripaddr);
-            curport = (temp_element->c)->rport;
+            if(temp_element!= NULL){
 
-            /* Load new IP addr/port */
-            uip_ipaddr_copy(&(temp_element->c)->ripaddr, temp_element->toaddr);
-            (temp_element->c)->rport = temp_element->toport;
+              printf("We have popped an element and sent it\n");
 
-            uip_udp_packet_send(temp_element->c, data, temp_element->len);
+              uip_ipaddr_t curaddr;
+              uint16_t curport;
 
-            /* Restore old IP addr/port */
-            uip_ipaddr_copy(&(temp_element->c)->ripaddr, &curaddr);       
-            (temp_element->c)->rport = curport;
+              if(temp_element->toaddr != NULL) {
+              /* Save current IP addr/port. */
+                uip_ipaddr_copy(&curaddr, &(temp_element->c)->ripaddr);
+                curport = (temp_element->c)->rport;
+
+                /* Load new IP addr/port */
+                uip_ipaddr_copy(&(temp_element->c)->ripaddr, temp_element->toaddr);
+                (temp_element->c)->rport = temp_element->toport;
+
+                uip_udp_packet_send(temp_element->c, data, temp_element->len);
+
+                /* Restore old IP addr/port */
+                uip_ipaddr_copy(&(temp_element->c)->ripaddr, &curaddr);       
+                (temp_element->c)->rport = curport;
+              }
+            }
           }
         }
       }
+    }
   }
+
+  PROCESS_END();
 }
-/*---------------------------------------------------------------------------*/
+
