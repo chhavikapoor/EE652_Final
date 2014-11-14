@@ -56,6 +56,7 @@
 #define DEBUG DEBUG_NONE
 
 #include "net/uip-debug.h"
+ extern unsigned short node_id;
 
 #if UIP_CONF_IPV6
 /*---------------------------------------------------------------------------*/
@@ -260,11 +261,12 @@ dio_input(void)
   /* Process the DIO base option. */
   i = 0;
   buffer = UIP_ICMP_PAYLOAD;
-
+  dio.queue_size = buffer[i++];   //added by chhavi
   dio.instance_id = buffer[i++];
   dio.version = buffer[i++];
   dio.rank = get16(buffer, i);
   i += 2;
+  
 
   PRINTF("RPL: Incoming DIO (id, ver, rank) = (%u,%u,%u)\n",
          (unsigned)dio.instance_id,
@@ -317,6 +319,7 @@ dio_input(void)
       dio.mc.aggr = (buffer[i + 4] >> 4) & 0x3;
       dio.mc.prec = buffer[i + 4] & 0xf;
       dio.mc.length = buffer[i + 5];
+
 
       if(dio.mc.type == RPL_DAG_MC_NONE) {
         /* No metric container: do nothing */
@@ -414,7 +417,7 @@ dio_input(void)
 /*---------------------------------------------------------------------------*/
 void
 dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
-{
+{ printf("rpl-icmp.c: sending out dio\n");
   unsigned char *buffer;
   int pos;
   rpl_dag_t *dag = instance->current_dag;
@@ -431,10 +434,12 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
   }
 #endif /* RPL_LEAF_ONLY */
 
-  /* DAG Information Object */
+  /* DAG Information Object */   //this is where the DIO is being formed
+
   pos = 0;
 
   buffer = UIP_ICMP_PAYLOAD;
+  buffer[pos++] = node_id;
   buffer[pos++] = instance->instance_id;
   buffer[pos++] = dag->version;
 
@@ -533,6 +538,8 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
     PRINTF("RPL: No prefix to announce (len %d)\n",
            dag->prefix_info.length);
   }
+  
+  
 
 #if RPL_LEAF_ONLY
 #if (DEBUG) & DEBUG_PRINT
@@ -544,6 +551,7 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
       (unsigned)dag->rank);
   PRINT6ADDR(uc_addr);
   PRINTF("\n");
+  printf("this is the position 1 %d\n",pos);
   uip_icmp6_send(uc_addr, ICMP6_RPL, RPL_CODE_DIO, pos);
 #else /* RPL_LEAF_ONLY */
   /* Unicast requests get unicast replies! */
@@ -557,6 +565,7 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
         (unsigned)instance->current_dag->rank);
     PRINT6ADDR(uc_addr);
     PRINTF("\n");
+    printf("this is the position 2%d\n",pos);
     uip_icmp6_send(uc_addr, ICMP6_RPL, RPL_CODE_DIO, pos);
   }
 #endif /* RPL_LEAF_ONLY */

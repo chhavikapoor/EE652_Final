@@ -28,6 +28,7 @@
 
 void set_global_address(void)
 {
+  printf("static-routing.c: we are setting the global addresses over here \n");
   uip_ipaddr_t ipaddr;
 
   uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);

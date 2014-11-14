@@ -154,7 +154,7 @@ collect_common_send(void)
   }
 
   /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
-  printf("We have created a packet\n");
+  printf("udp-sender.c: We have created a packet\n");
   collect_view_construct_message(&msg.msg, &parent,
                                  parent_etx, rtmetric,
                                  num_neighbors, beacon_interval);

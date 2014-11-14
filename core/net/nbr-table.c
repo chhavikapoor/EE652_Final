@@ -229,6 +229,7 @@ nbr_table_allocate(void)
 int
 nbr_table_register(nbr_table_t *table, nbr_table_callback *callback)
 {
+  printf("nbr-table.c: we are registering a neighbor table\n");
   if(num_tables < MAX_NUM_TABLES) {
     table->index = num_tables++;
     table->callback = callback;

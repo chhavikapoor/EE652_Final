@@ -89,11 +89,11 @@ uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len)
            UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
     uip_process(UIP_UDP_SEND_CONN);
 #if UIP_CONF_IPV6
-    printf("Calling tcpip_ipv6_output\n");
+    printf("uip-udp-packet.c: Calling tcpip_ipv6_output\n");
     tcpip_ipv6_output();
 #else
     if(uip_len > 0) {
-      printf("Calling tcpip_output\n");
+      printf("uip-udp-packet.c: Calling tcpip_output\n");
       tcpip_output();
     }
 #endif
@@ -109,8 +109,8 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
   int length;
   
     if(init_flag == 0){
-      printf("initializing the list\n");
-      printf("this is the value of the init flag %d\n", init_flag);
+      printf("uip-udp-packet.c: initializing the list\n");
+      //printf("uip-udp-packet.c: this is the value of the init flag %d\n", init_flag);
       init_flag = 1;
      list_init(mylist);
     }
@@ -126,7 +126,7 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
 
    if(packets_pushed < MAX_STACK_LENGTH){
      packets_pushed ++ ;
-     printf("We are pushing a packet\n");
+     printf("uip-udp-packet.c: We are pushing a packet\n");
      list_push(mylist, queue_element);
      //printf("This is the list length after pushing a packet %d\n", list_length(mylist));
     }
@@ -168,7 +168,7 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
 
             if(temp_element!= NULL){
 
-              printf("We have popped an element and sent it\n");
+              printf("uip-udp-packet.c: We have popped an element and sent it\n");
 
               uip_ipaddr_t curaddr;
               uint16_t curport;
