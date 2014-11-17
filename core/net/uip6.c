@@ -88,6 +88,7 @@
 
 #if UIP_CONF_IPV6_RPL
 #include "rpl/rpl.h"
+#include "rpl/bcp.h" 
 #endif /* UIP_CONF_IPV6_RPL */
 
 #if UIP_LOGGING == 1
@@ -1424,7 +1425,8 @@ uip_process(uint8_t flag)
     break;
 #if UIP_CONF_IPV6_RPL
   case ICMP6_RPL:
-    uip_rpl_input();
+    //uip_rpl_input();
+     uip_bcp_input();
     break;
 #endif /* UIP_CONF_IPV6_RPL */
     case ICMP6_ECHO_REQUEST:

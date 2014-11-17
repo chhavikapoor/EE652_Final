@@ -32,6 +32,7 @@
 #include "net/uip-ds6.h"
 #include "net/uip-udp-packet.h"
 #include "net/rpl/rpl.h"
+#include "bcp.h" 
 #include "dev/serial-line.h"
 #if CONTIKI_TARGET_Z1
 #include "dev/uart0.h"
@@ -39,6 +40,7 @@
 #include "dev/uart1.h"
 #endif
 #include "collect-common.h"
+#include "bcp-collect-common.h" 
 #include "collect-view.h"
 #include "list.h"
 #include "packetstack.h" 

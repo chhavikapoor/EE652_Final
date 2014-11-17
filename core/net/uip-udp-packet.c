@@ -42,6 +42,7 @@
 extern uint16_t uip_slen;
 
 #include "net/uip-udp-packet.h"
+#include "rpl/bcp.h"
 #include "lib/list.h"
 
 #include <string.h>
@@ -140,7 +141,7 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
   int length_pop = 0;
   PROCESS_BEGIN();
 
-  collect_common_net_init();
+  //collect_common_net_init();
 
   /* Send a packet every 60-62 seconds. */
   etimer_set(&period_timer, CLOCK_SECOND * PERIOD_POP);   //setting the period time to the value given by argument 2

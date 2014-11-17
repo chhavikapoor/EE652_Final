@@ -70,6 +70,7 @@ extern struct uip_fallback_interface UIP_FALLBACK_INTERFACE;
 
 #if UIP_CONF_IPV6_RPL
 #include "rpl/rpl.h"
+#include "rpl/bcp.h"
 #endif
 
 process_event_t tcpip_event;
@@ -823,9 +824,10 @@ PROCESS_THREAD(tcpip_process, ev, data)
 /* initialize RPL if configured for using RPL */
 #if UIP_CONF_IPV6 && UIP_CONF_IPV6_RPL
   printf("tcpip.c: We are initializing RPL over here\n");
-  rpl_init();
+  bcp_init();
 #endif /* UIP_CONF_IPV6_RPL */
 
+//bcp_init
   while(1) {
     PROCESS_YIELD();
     eventhandler(ev, data);
