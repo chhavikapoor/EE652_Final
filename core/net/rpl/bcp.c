@@ -157,7 +157,7 @@ bcp_process_beacon(uip_ipaddr_t *from, rpl_dio_t *dio)
  
 
         printf("bcp process beacon\n");
-		//bcp_reset_beacon_timer();
+		    bcp_reset_beacon_timer();
       	
         /*if(dio->prefix_info.length != 0) {
           if(dio->prefix_info.flags & UIP_ND6_RA_FLAG_AUTONOMOUS) {
@@ -176,8 +176,8 @@ handle_bcp_timer()
   
       //PRINTF("RPL: Postponing DIO transmission since link local address is not ok\n");
       //ctimer_set(&instance->dio_timer, CLOCK_SECOND, &handle_dio_timer, instance);
-  
-      beacon_output();
+      printf("we are in handle bcp timer\n");
+      beacon_output(NULL);
   
 }
 
@@ -185,7 +185,7 @@ handle_bcp_timer()
 void
 bcp_reset_beacon_timer()
 {
-
-     ctimer_set(&bcp_reset_beacon_timer, CLOCK_SECOND, &handle_bcp_timer, NULL);   //just do this .. maybe think of using reset in its place
-
+     printf("resetting the timer\n");
+     ctimer_set(&bcp_beacon_timer, CLOCK_SECOND, &handle_bcp_timer, NULL);   //just do this .. maybe think of using reset in its place
+     
 }

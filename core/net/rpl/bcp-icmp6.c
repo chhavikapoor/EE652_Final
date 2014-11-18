@@ -156,6 +156,8 @@ beacon_input(void)
   buffer = UIP_ICMP_PAYLOAD;
   dio.queue_size = buffer[i++];   //added by chhavi
 
+  printf("received a beacon: %d\n", buffer[0]);
+
   /*dio.prefix_info.length = buffer[i + 2];
   dio.prefix_info.flags = buffer[i + 3];
   dio.prefix_info.lifetime = get32(buffer, i + 8);
@@ -168,6 +170,7 @@ void
 beacon_output(uip_ipaddr_t *uc_addr)
 { printf("bcp.c: sending out beacon\n");
   unsigned char *buffer;
+  uip_ipaddr_t addr;
   int pos;
   
 
@@ -194,7 +197,8 @@ beacon_output(uip_ipaddr_t *uc_addr)
   PRINTF("RPL: Sending prefix info in DIO for ");
   PRINT6ADDR(&dag->prefix_info.prefix);
   PRINTF("\n");*/
-  uip_icmp6_send(uc_addr, ICMP6_RPL, RPL_CODE_DIO, pos);
+  uip_create_linklocal_rplnodes_mcast(&addr);
+  uip_icmp6_send(&addr, ICMP6_RPL, RPL_CODE_DIO, pos);
 
 }
 /*---------------------------------------------------------------------------*/
