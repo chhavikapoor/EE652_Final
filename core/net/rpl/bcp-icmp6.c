@@ -127,6 +127,7 @@ beacon_input(void)
   PRINTF("\n");
 
   if((nbr = uip_ds6_nbr_lookup(&from)) == NULL) {
+    printf("adding a new neighbor\n");
     if((nbr = uip_ds6_nbr_add(&from, (uip_lladdr_t *)
                               packetbuf_addr(PACKETBUF_ADDR_SENDER),
                               0, NBR_REACHABLE)) != NULL) {

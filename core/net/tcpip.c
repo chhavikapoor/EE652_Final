@@ -559,6 +559,7 @@ tcpip_ipv6_output(void)
   if(uip_is_addr_unspecified(&UIP_IP_BUF->destipaddr)){
     UIP_LOG("tcpip_ipv6_output: Destination address unspecified");
     uip_len = 0;
+    printf("we are returning as the dest addr is not specified\n");
     return;
   }
 

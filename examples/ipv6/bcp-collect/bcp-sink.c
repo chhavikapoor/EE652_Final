@@ -32,6 +32,7 @@
 #include "contiki-net.h"
 #include "net/uip.h"
 #include "net/rpl/rpl.h"
+#include "net/rpl/bcp.h" 
 #include "net/rime/rimeaddr.h"
 
 #include "net/netstack.h"
@@ -144,9 +145,9 @@ PROCESS_THREAD(udp_server_process, ev, data)
 
   PRINTF("UDP server started\n");
 
-#if UIP_CONF_ROUTER
+/*#if UIP_CONF_ROUTER
   uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 1);
-  /* uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr); */
+  // uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr); 
   uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
   root_if = uip_ds6_addr_lookup(&ipaddr);
   if(root_if != NULL) {
@@ -158,10 +159,10 @@ PROCESS_THREAD(udp_server_process, ev, data)
   } else {
     PRINTF("failed to create a new RPL DAG\n");
   }
-#endif /* UIP_CONF_ROUTER */
-
+#endif*/ /* UIP_CONF_ROUTER */
+   
   bcp_print_local_addresses();
-
+  bcp_reset_beacon_timer();
   /* The data sink runs with a 100% duty cycle in order to ensure high
      packet reception rates. */
   NETSTACK_RDC.off(1);

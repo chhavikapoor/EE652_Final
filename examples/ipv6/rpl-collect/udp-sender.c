@@ -75,12 +75,16 @@ collect_common_net_print(void)
 {
   rpl_dag_t *dag;
   uip_ds6_route_t *r;
+  uip_ipaddr_t * temp_ip;
 
   /* Let's suppose we have only one instance */
   dag = rpl_get_any_dag();
   if(dag->preferred_parent != NULL) {
     PRINTF("Preferred parent: ");
-    PRINT6ADDR(rpl_get_parent_ipaddr(dag->preferred_parent));
+
+    temp_ip = rpl_get_parent_ipaddr(dag->preferred_parent);
+
+    PRINT6ADDR(temp_ip);
     PRINTF("\n");
   }
   for(r = uip_ds6_route_head();
