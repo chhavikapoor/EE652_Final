@@ -145,21 +145,22 @@ PROCESS_THREAD(udp_server_process, ev, data)
 
   PRINTF("UDP server started\n");
 
-/*#if UIP_CONF_ROUTER
+#if UIP_CONF_ROUTER
+  printf("conf router was enabled!\n");
   uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 1);
   // uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr); 
   uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
-  root_if = uip_ds6_addr_lookup(&ipaddr);
-  if(root_if != NULL) {
-    rpl_dag_t *dag;
-    dag = rpl_set_root(RPL_DEFAULT_INSTANCE,(uip_ip6addr_t *)&ipaddr);
-    uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
-    rpl_set_prefix(dag, &ipaddr, 64);
-    PRINTF("created a new RPL dag\n");
-  } else {
-    PRINTF("failed to create a new RPL DAG\n");
-  }
-#endif*/ /* UIP_CONF_ROUTER */
+  //root_if = uip_ds6_addr_lookup(&ipaddr);
+  //if(root_if != NULL) {
+    //rpl_dag_t *dag;
+    //dag = rpl_set_root(RPL_DEFAULT_INSTANCE,(uip_ip6addr_t *)&ipaddr);
+    //uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
+    //rpl_set_prefix(dag, &ipaddr, 64);
+    //PRINTF("created a new RPL dag\n");
+  //} else {
+    //PRINTF("failed to create a new RPL DAG\n");
+  //}
+#endif/* UIP_CONF_ROUTER */
    
   bcp_print_local_addresses();
   bcp_reset_beacon_timer();
@@ -178,11 +179,9 @@ PROCESS_THREAD(udp_server_process, ev, data)
   while(1) {
     PROCESS_YIELD();
     if(ev == tcpip_event) {
+      printf("hey! an event occurred\n");
       bcp_tcpip_handler();
-    } else if (ev == sensors_event && data == &button_sensor) {
-      PRINTF("Initiaing global repair\n");
-      rpl_repair_root(RPL_DEFAULT_INSTANCE);
-    }
+    } 
   }
 
   PROCESS_END();

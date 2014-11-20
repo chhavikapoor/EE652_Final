@@ -56,6 +56,10 @@
 extern list_t mylist_list;
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
+uip_ipaddr_t addr;
+
+
+
 
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "UDP client process");   // we are creating a process over here
@@ -113,6 +117,7 @@ bcp_collect_common_send(void)
   uint16_t beacon_interval;
   bcp_parent_t *preferred_parent;
   rimeaddr_t parent;
+  //uip_ipaddr_t* addr;
   //rpl_dag_t *dag;
 
   if(client_conn == NULL) {
@@ -131,19 +136,44 @@ bcp_collect_common_send(void)
   parent_etx = 0;
 
   /* Let's suppose we have only one instance */
-  
+      printf("We are before harcoding IPv6 address\n");
+      //uip_ip6addr_u8(addr, 0xfe,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x12,0x74,0x01,0x00,0x01,0x01,0x01);
+      /*(addr)->u8[0] = 0xfe;
+      (addr)->u8[1] = 0x80; 
+      (addr)->u8[2] = 0x00;
+      (addr)->u8[3] = 0x00; 
+      (addr)->u8[4] = 0x00; 
+      (addr)->u8[5] = 0x00; 
+      (addr)->u8[6] = 0x00; 
+      (addr)->u8[7] = 0x00; 
+      (addr)->u8[8] = 0x02;
+      (addr)->u8[9] =0x12;
+      (addr)->u8[10] =0x74;
+      (addr)->u8[11] =0x03;
+      (addr)->u8[12] = 0x00; 
+      (addr)->u8[13]=0x03;
+      (addr)->u8[14]=0x03; 
+      (addr)->u8[15]=0x03;*/
+ 
+      printf("we are after harcoding IP address\n");
       uip_ds6_nbr_t *nbr;
-      nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
+      //nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
+      nbr = uip_ds6_nbr_lookup(&addr);
+      printf("we are after neighbor lookup \n");
+
       if(nbr != NULL) {
+        printf("Yay.neighbor is not null\n");
         /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
         parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
         parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
+
+        printf("rime addr %d:%d\n",parent.u8[RIMEADDR_SIZE - 1],parent.u8[RIMEADDR_SIZE - 2]);
         parent_etx = 2;
       }
       
-    rtmetric = 0;
-    beacon_interval = 0;
-    num_neighbors = 0;
+    rtmetric = 3;
+    beacon_interval = 4;
+    num_neighbors = 1;
   
 
   /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
@@ -199,6 +229,8 @@ bcp_set_global_address(void)
 
   /* set server address */
   uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 1);
+  uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
+  
 
 }
 /*---------------------------------------------------------------------------*/
@@ -209,6 +241,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PROCESS_PAUSE();
 
   bcp_set_global_address();
+
+    
 
   PRINTF("UDP client process started\n");
 

@@ -114,7 +114,7 @@ static uint8_t (* outputfunc)(uip_lladdr_t *a);
 
 uint8_t
 tcpip_output(uip_lladdr_t *a)
-{
+{ printf("TCP out\n");
   int ret;
   if(outputfunc != NULL) {
     ret = outputfunc(a);
@@ -185,6 +185,8 @@ check_for_tcp_syn(void)
 static void
 packet_input(void)
 {
+
+  printf("we are in packet input\n");
 #if UIP_CONF_IP_FORWARD
   if(uip_len > 0) {
     tcpip_is_forwarding = 1;
@@ -541,25 +543,27 @@ tcpip_input(void)
 void
 tcpip_ipv6_output(void)
 {
-  //printf("We are inside tcp_ipv6_output\n");
+  printf("inside tcp_ipv6_o\n");
   uip_ds6_nbr_t *nbr = NULL;
   uip_ipaddr_t *nexthop;
 
   if(uip_len == 0) {
     //printf("Returning from tcp_ipv6_output as uip_len =0\n");
+    printf("E1\n");
     return;
   }
 
   if(uip_len > UIP_LINK_MTU) {
     UIP_LOG("tcpip_ipv6_output: Packet to big");
     uip_len = 0;
+    printf("E2\n");
     return;
   }
 
   if(uip_is_addr_unspecified(&UIP_IP_BUF->destipaddr)){
     UIP_LOG("tcpip_ipv6_output: Destination address unspecified");
     uip_len = 0;
-    printf("we are returning as the dest addr is not specified\n");
+    printf("E3\n");
     return;
   }
 
@@ -570,7 +574,9 @@ tcpip_ipv6_output(void)
     /* We first check if the destination address is on our immediate
        link. If so, we simply use the destination address as our
        nexthop address. */
-    if(uip_ds6_is_addr_onlink(&UIP_IP_BUF->destipaddr)){
+    //if(uip_ds6_is_addr_onlink(&UIP_IP_BUF->destipaddr)){
+     if(1){   //making this change so that we can bypass the check for the prefix
+      printf("dest is on our link\n");
       nexthop = &UIP_IP_BUF->destipaddr;
     } else {
       uip_ds6_route_t *route;
@@ -582,21 +588,23 @@ tcpip_ipv6_output(void)
         PRINTF("tcpip_ipv6_output: no route found, using default route\n");
         nexthop = uip_ds6_defrt_choose();
         if(nexthop == NULL) {
-#ifdef UIP_FALLBACK_INTERFACE
-	  PRINTF("FALLBACK: removing ext hdrs & setting proto %d %d\n", 
-		 uip_ext_len, *((uint8_t *)UIP_IP_BUF + 40));
-	  if(uip_ext_len > 0) {
-	    extern void remove_ext_hdr(void);
-	    uint8_t proto = *((uint8_t *)UIP_IP_BUF + 40);
-	    remove_ext_hdr();
+        #ifdef UIP_FALLBACK_INTERFACE
+  	       PRINTF("FALLBACK: removing ext hdrs & setting proto %d %d\n", 
+  		     uip_ext_len, *((uint8_t *)UIP_IP_BUF + 40));
+  	       if(uip_ext_len > 0) {
+  	         extern void remove_ext_hdr(void);
+  	         uint8_t proto = *((uint8_t *)UIP_IP_BUF + 40);
+  	         remove_ext_hdr();
 	    /* This should be copied from the ext header... */
-	    UIP_IP_BUF->proto = proto;
-	  }
-	  UIP_FALLBACK_INTERFACE.output();
-#else
+	           UIP_IP_BUF->proto = proto;
+	         }
+	       UIP_FALLBACK_INTERFACE.output();
+        #else
           PRINTF("tcpip_ipv6_output: Destination off-link but no route\n");
-#endif /* !UIP_FALLBACK_INTERFACE */
+          printf("no uip fallback\n");
+        #endif /* !UIP_FALLBACK_INTERFACE */
           uip_len = 0;
+          printf("E4\n");
           return;
         }
 
@@ -608,7 +616,7 @@ tcpip_ipv6_output(void)
         /* If the nexthop is dead, for example because the neighbor
            never responded to link-layer acks, we drop its route. */
         if(nexthop == NULL) {
-#if UIP_CONF_IPV6_RPL
+          #if UIP_CONF_IPV6_RPL
           /* If we are running RPL, and if we are the root of the
              network, we'll trigger a global repair berfore we remove
              the route. */
@@ -620,15 +628,18 @@ tcpip_ipv6_output(void)
             instance = dag->instance;
 
             rpl_repair_root(instance->instance_id);
-          }
-#endif /* UIP_CONF_RPL */
+          } 
+          #endif /* UIP_CONF_RPL */
           uip_ds6_route_rm(route);
-
+           //printf("Drop no NH\n");
           /* We don't have a nexthop to send the packet to, so we drop
              it. */
+           printf("E5\n");
           return;
         }
       }
+
+      printf("NHP\n");
 #if TCPIP_CONF_ANNOTATE_TRANSMISSIONS
       if(nexthop != NULL) {
         static uint8_t annotate_last;
@@ -642,21 +653,23 @@ tcpip_ipv6_output(void)
         annotate_has_last = 1;
       }
 #endif /* TCPIP_CONF_ANNOTATE_TRANSMISSIONS */
-    }
+}
 
     /* End of next hop determination */
 
-#if UIP_CONF_IPV6_RPL
+      #if UIP_CONF_IPV6_RPL
     if(rpl_update_header_final(nexthop)) {
       uip_len = 0;
+      printf("E6\n");
       return;
     }
-#endif /* UIP_CONF_IPV6_RPL */
+  #endif /* UIP_CONF_IPV6_RPL */
     nbr = uip_ds6_nbr_lookup(nexthop);
     if(nbr == NULL) {
 #if UIP_ND6_SEND_NA
       if((nbr = uip_ds6_nbr_add(nexthop, NULL, 0, NBR_INCOMPLETE)) == NULL) {
         uip_len = 0;
+        printf("E7\n");
         return;
       } else {
 #if UIP_CONF_IPV6_QUEUE_PKT
@@ -695,6 +708,7 @@ tcpip_ipv6_output(void)
         }
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
         uip_len = 0;
+        printf("E8\n");
         return;
       }
       /* Send in parallel if we are running NUD (nbc state is either STALE,
@@ -725,8 +739,10 @@ tcpip_ipv6_output(void)
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
 
       uip_len = 0;
+      printf("E9\n");
       return;
     }
+    printf("E*\n");
     return;
   }
   /* Multicast IP destination address. */
@@ -824,8 +840,9 @@ PROCESS_THREAD(tcpip_process, ev, data)
 #endif
 /* initialize RPL if configured for using RPL */
 #if UIP_CONF_IPV6 && UIP_CONF_IPV6_RPL
-  printf("tcpip.c: We are initializing RPL over here\n");
-  bcp_init();
+  //printf("tcpip.c: We are initializing RPL over here\n");
+   bcp_init();
+   rpl_init();
 #endif /* UIP_CONF_IPV6_RPL */
 
 //bcp_init

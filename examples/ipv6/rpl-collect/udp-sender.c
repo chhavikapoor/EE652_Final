@@ -32,7 +32,7 @@
 #include "net/uip-ds6.h"
 #include "net/uip-udp-packet.h"
 #include "net/rpl/rpl.h"
-#include "bcp.h" 
+//#include "bcp.h" 
 #include "dev/serial-line.h"
 #if CONTIKI_TARGET_Z1
 #include "dev/uart0.h"
@@ -40,7 +40,7 @@
 #include "dev/uart1.h"
 #endif
 #include "collect-common.h"
-#include "bcp-collect-common.h" 
+//#include "bcp-collect-common.h" 
 #include "collect-view.h"
 #include "list.h"
 #include "packetstack.h" 
@@ -120,6 +120,7 @@ collect_common_send(void)
   rpl_parent_t *preferred_parent;
   rimeaddr_t parent;
   rpl_dag_t *dag;
+  uip_ipaddr_t addr;
 
   if(client_conn == NULL) {
     /* Not setup yet */
@@ -143,6 +144,10 @@ collect_common_send(void)
     if(preferred_parent != NULL) {
       uip_ds6_nbr_t *nbr;
       nbr = uip_ds6_nbr_lookup(rpl_get_parent_ipaddr(preferred_parent));
+        //printf("HC\n");
+        //uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
+      //nbr = uip_ds6_nbr_lookup(&addr);
+      
       if(nbr != NULL) {
         /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
         parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
@@ -160,7 +165,7 @@ collect_common_send(void)
   }
 
   /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
-  printf("udp-sender.c: We have created a packet\n");
+  //printf("udp-sender.c: We have created a packet\n");
   collect_view_construct_message(&msg.msg, &parent,
                                  parent_etx, rtmetric,
                                  num_neighbors, beacon_interval);
