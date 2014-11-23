@@ -48,11 +48,14 @@
 
 #define UDP_CLIENT_PORT 8775
 #define UDP_SERVER_PORT 5688
+//#define UDP_SERVER1_PORT 6553
+#define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
-
+extern unsigned short node_id;
+static struct uip_udp_conn *server_conn;
 extern list_t mylist_list;
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
@@ -96,8 +99,19 @@ bcp_collect_common_net_print(void)
 static void
 bcp_tcpip_handler(void)
 {
+  uint8_t *appdata;
+  rimeaddr_t sender;
+  uint8_t seqno;
+  uint8_t hops;
+
   if(uip_newdata()) {
-    /* Ignore incoming data */
+    appdata = (uint8_t *)uip_appdata;
+    sender.u8[0] = UIP_IP_BUF->srcipaddr.u8[15];
+    sender.u8[1] = UIP_IP_BUF->srcipaddr.u8[14];
+    seqno = *appdata;
+    hops = uip_ds6_if.cur_hop_limit - UIP_IP_BUF->ttl + 1;
+    bcp_collect_common_recv(&sender, seqno, hops,
+                        appdata + 2, uip_datalen() - 2);
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -223,13 +237,25 @@ bcp_set_global_address(void)
 {
   uip_ipaddr_t ipaddr;
 
-  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
-  uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
-  uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
+  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id);
+  //uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
+  uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
 
   /* set server address */
-  uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 1);
-  uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
+  uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id-1);
+
+  switch(node_id){
+  	case 2: 
+  	  uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
+  	  break;
+  	case 3: 
+  	  uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7402,0x0002,0x0202);
+  	  break;
+  	case 4:
+  	  uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7403,0x0003,0x0303);
+
+  }
+  
   
 
 }
@@ -248,11 +274,15 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   bcp_print_local_addresses();
 
-
-
+  bcp_reset_beacon_timer();
+   
   /* new connection with remote host */
   client_conn = udp_new(NULL, UIP_HTONS(UDP_SERVER_PORT), NULL);
   udp_bind(client_conn, UIP_HTONS(UDP_CLIENT_PORT));
+
+  /*new connection as server */
+  server_conn = udp_new(NULL, UIP_HTONS(UDP_CLIENT_PORT), NULL);
+  udp_bind(server_conn, UIP_HTONS(UDP_SERVER_PORT));
 
   PRINTF("Created a connection with the server ");
   PRINT6ADDR(&client_conn->ripaddr);
@@ -266,6 +296,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
   while(1) {
     PROCESS_YIELD();
     if(ev == tcpip_event) {
+      printf("receiving a packet/n");
       bcp_tcpip_handler();
     }
   }
