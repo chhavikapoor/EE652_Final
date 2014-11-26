@@ -104,7 +104,10 @@ bcp_tcpip_handler(void)
   uint8_t seqno;
   uint8_t hops;
   struct collect_view_data_msg *msg;
-   struct collect_view_data_msg msg1;
+  struct collect_view_data_msg msg1;
+
+  hdr_information_t hdr_info; 
+
 
   if(uip_newdata()) {
     appdata = (uint8_t *)uip_appdata;
@@ -112,7 +115,11 @@ bcp_tcpip_handler(void)
     sender.u8[1] = UIP_IP_BUF->srcipaddr.u8[14];
     seqno = *appdata;
     hops = uip_ds6_if.cur_hop_limit - UIP_IP_BUF->ttl + 1;
-
+    
+    hdr_info.seqno = seqno;
+    hdr_info.hops = UIP_IP_BUF->ttl - 1;  
+    hdr_info.sender.u8[0] = sender.u8[0];
+    hdr_info.sender.u8[1] = sender.u8[1];
 
      uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id-1);
 
@@ -131,8 +138,8 @@ bcp_tcpip_handler(void)
    msg = appdata ;
  
    if(node_id != 1){
-   uip_udp_packet_sendto(client_conn, msg, sizeof(msg1)+2,
-                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
+   bcp_uip_udp_packet_sendto(client_conn, msg, sizeof(msg1)+2,
+                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT),&hdr_info);
   }
   else{
     bcp_collect_common_recv(&sender, seqno, hops,
@@ -176,26 +183,7 @@ bcp_collect_common_send(void)
   parent_etx = 0;
 
   /* Let's suppose we have only one instance */
-      printf("We are before harcoding IPv6 address\n");
-      //uip_ip6addr_u8(addr, 0xfe,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x12,0x74,0x01,0x00,0x01,0x01,0x01);
-      /*(addr)->u8[0] = 0xfe;
-      (addr)->u8[1] = 0x80; 
-      (addr)->u8[2] = 0x00;
-      (addr)->u8[3] = 0x00; 
-      (addr)->u8[4] = 0x00; 
-      (addr)->u8[5] = 0x00; 
-      (addr)->u8[6] = 0x00; 
-      (addr)->u8[7] = 0x00; 
-      (addr)->u8[8] = 0x02;
-      (addr)->u8[9] =0x12;
-      (addr)->u8[10] =0x74;
-      (addr)->u8[11] =0x03;
-      (addr)->u8[12] = 0x00; 
-      (addr)->u8[13]=0x03;
-      (addr)->u8[14]=0x03; 
-      (addr)->u8[15]=0x03;*/
- 
-      printf("we are after harcoding IP address\n");
+  
       uip_ds6_nbr_t *nbr;
       //nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
       nbr = uip_ds6_nbr_lookup(&addr);
@@ -237,8 +225,8 @@ bcp_collect_common_send(void)
                                  parent_etx, rtmetric,
                                  num_neighbors, beacon_interval);
 
-  uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
-                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
+  bcp_uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
+                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT), NULL);
 }
 /*---------------------------------------------------------------------------*/
 void

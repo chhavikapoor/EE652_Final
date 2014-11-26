@@ -48,6 +48,9 @@ extern uint16_t uip_slen;
 
 #include <string.h>
 
+void bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len, const uip_ipaddr_t *toaddr, uint16_t toport, hdr_information_t*);
+void bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t*);
+
 #define PERIOD_POP 1
 #define RANDWAIT (PERIOD_POP)
 int pop_active = 1;
@@ -69,6 +72,7 @@ struct chhavi_list{
   int len;
   const uip_ipaddr_t *toaddr;
   uint16_t toport;
+  struct hdr_information_t *hdr_info;
 
 };
 
@@ -90,6 +94,8 @@ uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len)
            len > UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN?
            UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
     uip_process(UIP_UDP_SEND_CONN);
+
+    //bcp_uip_process();
 #if UIP_CONF_IPV6
     printf("uip-udp-packet.c: Calling tcpip_ipv6_output\n");
     tcpip_ipv6_output();
@@ -120,12 +126,93 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
    struct chhavi_list *queue_element = (struct chhavi_list*)malloc(sizeof(struct chhavi_list)); 
    struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)malloc(sizeof(struct collect_view_data_msg));
    memcpy(temp_msg,data,len);
+   
+   queue_element->c = c;
+   queue_element->data = temp_msg;
+   queue_element->len = len;
+   queue_element->toaddr = toaddr;
+   queue_element->toport = toport;
+   
+
+   if(packets_pushed < MAX_STACK_LENGTH){
+     packets_pushed ++ ;
+     printf("uip-udp-packet.c: We are pushing a packet\n");
+     list_push(mylist, queue_element);
+     //printf("This is the list length after pushing a packet %d\n", list_length(mylist));
+    }
+
+   
+}
+
+
+/*********************************************BCP********************************************/
+
+
+void
+bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t* hdr_info)
+{
+
+
+#if UIP_UDP
+  if(data != NULL) {
+    uip_udp_conn = c;
+    uip_slen = len;
+    memcpy(&uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN], data,
+           len > UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN?
+           UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
+    //uip_process(UIP_UDP_SEND_CONN);
+
+    bcp_uip_process(hdr_info);
+#if UIP_CONF_IPV6
+    printf("uip-udp-packet.c: Calling tcpip_ipv6_output\n");
+    tcpip_ipv6_output();
+#else
+    if(uip_len > 0) {
+      printf("uip-udp-packet.c: Calling tcpip_output\n");
+      tcpip_output();
+    }
+#endif
+  }
+  uip_slen = 0;
+#endif /* UIP_UDP */
+}
+/*---------------------------------------------------------------------------*/
+void
+bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
+          const uip_ipaddr_t *toaddr, uint16_t toport, hdr_information_t* hdr_info)
+{
+  int length;
+  struct hdr_information_t *temp_hdr_info;
+  
+    if(init_flag == 0){
+      printf("uip-udp-packet.c: initializing the list\n");
+      //printf("uip-udp-packet.c: this is the value of the init flag %d\n", init_flag);
+      init_flag = 1;
+     list_init(mylist);
+    }
+   
+   struct chhavi_list *queue_element = (struct chhavi_list*)malloc(sizeof(struct chhavi_list)); 
+   struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)malloc(sizeof(struct collect_view_data_msg));
+   memcpy(temp_msg,data,len);
+
+   if(hdr_info!=NULL){
+    printf("Hdr info not null\n");
+    temp_hdr_info = (struct hdr_information_t *)malloc(sizeof( hdr_information_t));
+    memcpy(temp_hdr_info,hdr_info, sizeof( hdr_information_t));
+   }
     
    queue_element->c = c;
    queue_element->data = temp_msg;
    queue_element->len = len;
    queue_element->toaddr = toaddr;
    queue_element->toport = toport;
+   if(hdr_info!=NULL){
+   queue_element->hdr_info = temp_hdr_info;
+   }
+   else{
+    queue_element->hdr_info = NULL;
+   }
+  
 
 
    if(packets_pushed < MAX_STACK_LENGTH){
@@ -137,6 +224,11 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
 
    
 }
+
+
+
+
+
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sending a packet for queuing
 {
@@ -186,12 +278,15 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
                 uip_ipaddr_copy(&(temp_element->c)->ripaddr, temp_element->toaddr);
                 (temp_element->c)->rport = temp_element->toport;
 
-                uip_udp_packet_send(temp_element->c, temp_element->data, temp_element->len);
+                //printf("This is the ipaddr %d\n", (temp_element->hdr_info)->sender.u8[0]);
+
+                bcp_uip_udp_packet_send(temp_element->c, temp_element->data, temp_element->len, temp_element->hdr_info);
 
                 /* Restore old IP addr/port */
                 uip_ipaddr_copy(&(temp_element->c)->ripaddr, &curaddr);       
                 (temp_element->c)->rport = curport;
-                //free(temp_element->data);
+                free(temp_element->data);
+                free(temp_element->hdr_info);
                 //free(temp_element);
               }
             }

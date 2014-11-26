@@ -16,6 +16,17 @@ struct bcp_beacon {
   //rpl_prefix_t prefix_info;
   uint8_t queue_size;
 };
+
+
+struct hdr_information {
+  rimeaddr_t sender;
+  uint8_t seqno;
+  uint8_t hops;  
+
+};
+typedef struct hdr_information hdr_information_t;
+
+
 typedef struct bcp_beacon bcp_beacon_t;
 
 

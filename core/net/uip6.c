@@ -79,6 +79,8 @@
 
 #include <string.h>
 
+
+
 #if UIP_CONF_IPV6
 /*---------------------------------------------------------------------------*/
 /* For Debug, logging, statistics                                            */
@@ -91,6 +93,8 @@
 #include "rpl/rpl.h"
 #include "rpl/bcp.h" 
 #endif /* UIP_CONF_IPV6_RPL */
+
+ void bcp_uip_process(hdr_information_t* hdr_info); 
 
 #if UIP_LOGGING == 1
 #include <stdio.h>
@@ -2299,6 +2303,89 @@ uip_process(uint8_t flag)
   uip_ext_bitmap = 0;
   uip_flags = 0;
   return;
+}
+
+void bcp_uip_process(hdr_information_t* hdr_info){
+
+  printf("In bcp udp_send\n");
+
+  if(uip_slen == 0) {
+    goto drop_bcp;
+  }
+  uip_len = uip_slen + UIP_IPUDPH_LEN;
+
+  /* For IPv6, the IP length field does not include the IPv6 IP header
+     length. */
+  UIP_IP_BUF->len[0] = ((uip_len - UIP_IPH_LEN) >> 8);
+  UIP_IP_BUF->len[1] = ((uip_len - UIP_IPH_LEN) & 0xff);
+
+  if(hdr_info!=NULL){
+   UIP_IP_BUF->ttl = hdr_info->hops;
+  }
+  else{
+
+  UIP_IP_BUF->ttl = uip_udp_conn->ttl;
+ }
+  UIP_IP_BUF->proto = UIP_PROTO_UDP;
+
+  UIP_UDP_BUF->udplen = UIP_HTONS(uip_slen + UIP_UDPH_LEN);
+  UIP_UDP_BUF->udpchksum = 0;
+
+  UIP_UDP_BUF->srcport  = uip_udp_conn->lport;
+  UIP_UDP_BUF->destport = uip_udp_conn->rport;
+
+  uip_ipaddr_copy(&UIP_IP_BUF->destipaddr, &uip_udp_conn->ripaddr);
+
+ 
+  uip_ds6_select_src(&UIP_IP_BUF->srcipaddr, &UIP_IP_BUF->destipaddr);
+   //uip_ipaddr_t addr_t;
+   //uip_ipaddr_copy(&addr_t, &UIP_IP_BUF->srcipaddr);
+   //uip_ipaddr_t *addr = &addr_t;
+  //printf("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15]); 
+
+  if(hdr_info!=NULL){
+
+   
+   UIP_IP_BUF->srcipaddr.u8[15] = hdr_info->sender.u8[0];
+   
+ }
+ 
+
+  uip_appdata = &uip_buf[UIP_LLH_LEN + UIP_IPTCPH_LEN];
+
+#if UIP_CONF_IPV6_RPL
+  rpl_insert_header();
+#endif /* UIP_CONF_IPV6_RPL */
+
+#if UIP_UDP_CHECKSUMS
+  /* Calculate UDP checksum. */
+  UIP_UDP_BUF->udpchksum = ~(uip_udpchksum());
+  if(UIP_UDP_BUF->udpchksum == 0) {
+    UIP_UDP_BUF->udpchksum = 0xffff;
+  }
+#endif /* UIP_UDP_CHECKSUMS */
+  UIP_STAT(++uip_stat.udp.sent);
+ 
+
+  UIP_IP_BUF->vtc = 0x60;
+  UIP_IP_BUF->tcflow = 0x00;
+  UIP_IP_BUF->flow = 0x00;
+ 
+  PRINTF("Sending packet with length %d (%d)\n", uip_len,
+         (UIP_IP_BUF->len[0] << 8) | UIP_IP_BUF->len[1]);
+  
+  UIP_STAT(++uip_stat.ip.sent);
+  /* Return and let the caller do the actual transmission. */
+  uip_flags = 0;
+  return;
+
+ drop_bcp:
+  uip_len = 0;
+  uip_ext_len = 0;
+  uip_ext_bitmap = 0;
+  uip_flags = 0;
+  return;
+
 }
 /*---------------------------------------------------------------------------*/
 uint16_t
