@@ -44,6 +44,7 @@ extern uint16_t uip_slen;
 #include "net/uip-udp-packet.h"
 #include "rpl/bcp.h"
 #include "lib/list.h"
+#include "collect-view.h"
 
 #include <string.h>
 
@@ -117,9 +118,11 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
     }
    
    struct chhavi_list *queue_element = (struct chhavi_list*)malloc(sizeof(struct chhavi_list)); 
+   struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)malloc(sizeof(struct collect_view_data_msg));
+   memcpy(temp_msg,data,len);
     
    queue_element->c = c;
-   queue_element->data = data;
+   queue_element->data = temp_msg;
    queue_element->len = len;
    queue_element->toaddr = toaddr;
    queue_element->toport = toport;
@@ -183,11 +186,13 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
                 uip_ipaddr_copy(&(temp_element->c)->ripaddr, temp_element->toaddr);
                 (temp_element->c)->rport = temp_element->toport;
 
-                uip_udp_packet_send(temp_element->c, data, temp_element->len);
+                uip_udp_packet_send(temp_element->c, temp_element->data, temp_element->len);
 
                 /* Restore old IP addr/port */
                 uip_ipaddr_copy(&(temp_element->c)->ripaddr, &curaddr);       
                 (temp_element->c)->rport = curport;
+                //free(temp_element->data);
+                //free(temp_element);
               }
             }
           }

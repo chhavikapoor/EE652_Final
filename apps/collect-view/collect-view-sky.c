@@ -6,6 +6,7 @@
 #include "dev/sht11-sensor.h"
 
 #include "collect-view-sky.h"
+extern unsigned short node_id;
 
 /*---------------------------------------------------------------------------*/
 void
@@ -22,6 +23,7 @@ collect_view_arch_read_sensors(struct collect_view_data_msg *msg)
   msg->sensors[LIGHT2_SENSOR] = light_sensor.value(LIGHT_SENSOR_TOTAL_SOLAR);
   msg->sensors[TEMP_SENSOR] = sht11_sensor.value(SHT11_SENSOR_TEMP);
   msg->sensors[HUMIDITY_SENSOR] = sht11_sensor.value(SHT11_SENSOR_HUMIDITY);
+  msg->sensors[RSSI_SENSOR] = node_id;
 
 
   SENSORS_DEACTIVATE(light_sensor);

@@ -103,6 +103,8 @@ bcp_tcpip_handler(void)
   rimeaddr_t sender;
   uint8_t seqno;
   uint8_t hops;
+  struct collect_view_data_msg *msg;
+   struct collect_view_data_msg msg1;
 
   if(uip_newdata()) {
     appdata = (uint8_t *)uip_appdata;
@@ -110,8 +112,32 @@ bcp_tcpip_handler(void)
     sender.u8[1] = UIP_IP_BUF->srcipaddr.u8[14];
     seqno = *appdata;
     hops = uip_ds6_if.cur_hop_limit - UIP_IP_BUF->ttl + 1;
+
+
+     uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id-1);
+
+  switch(node_id){
+    case 2: 
+      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
+      break;
+    case 3: 
+      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7402,0x0002,0x0202);
+      break;
+    case 4:
+      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7403,0x0003,0x0303);
+
+  }
+  
+   msg = appdata ;
+ 
+   if(node_id != 1){
+   uip_udp_packet_sendto(client_conn, msg, sizeof(msg1)+2,
+                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
+  }
+  else{
     bcp_collect_common_recv(&sender, seqno, hops,
                         appdata + 2, uip_datalen() - 2);
+   }
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -188,6 +214,21 @@ bcp_collect_common_send(void)
     rtmetric = 3;
     beacon_interval = 4;
     num_neighbors = 1;
+
+
+    uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id-1);
+
+  switch(node_id){
+    case 2: 
+      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
+      break;
+    case 3: 
+      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7402,0x0002,0x0202);
+      break;
+    case 4:
+      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7403,0x0003,0x0303);
+
+  }
   
 
   /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
@@ -242,19 +283,7 @@ bcp_set_global_address(void)
   uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
 
   /* set server address */
-  uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id-1);
-
-  switch(node_id){
-  	case 2: 
-  	  uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
-  	  break;
-  	case 3: 
-  	  uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7402,0x0002,0x0202);
-  	  break;
-  	case 4:
-  	  uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7403,0x0003,0x0303);
-
-  }
+  
   
   
 
