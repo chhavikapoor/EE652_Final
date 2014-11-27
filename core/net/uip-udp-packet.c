@@ -51,7 +51,7 @@ extern uint16_t uip_slen;
 void bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len, const uip_ipaddr_t *toaddr, uint16_t toport, hdr_information_t*);
 void bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t*);
 
-#define PERIOD_POP 1
+#define PERIOD_POP 10
 #define RANDWAIT (PERIOD_POP)
 int pop_active = 1;
 

@@ -217,7 +217,7 @@ bcp_collect_common_send(void)
 
     uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]) ;
 
-
+  if(node_id != 1){
   printf("udp-sender.c: We have created a packet\n");
   collect_view_construct_message(&msg.msg, &parent,
                                  parent_etx, rtmetric,
@@ -225,6 +225,7 @@ bcp_collect_common_send(void)
 
   bcp_uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
                         &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT), NULL);
+}
 }
 /*---------------------------------------------------------------------------*/
 void
