@@ -124,8 +124,6 @@ bcp_tcpip_handler(void)
     hdr_info.sender.u8[1] = sender.u8[1];
 
 
-
-
       uip_ds6_nbr_t *nbr;
 
       preferred_parent = bcp_find_best_parent();
@@ -143,22 +141,9 @@ bcp_tcpip_handler(void)
         //parent_etx = 2;
       }
 
-
-
-
      uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]);
 
-  /*switch(node_id){
-    case 2: 
-      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
-      break;
-    case 3: 
-      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7402,0x0002,0x0202);
-      break;
-    case 4:
-      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7403,0x0003,0x0303);
-
-  }*/
+     printf("BCP: Receiving packet from: %d forwarding to: %d\n", sender.u8[0], nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1] );
   
    msg = appdata ;
  
@@ -232,20 +217,7 @@ bcp_collect_common_send(void)
 
     uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]) ;
 
-  /*switch(node_id){
-    case 2: 
-      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
-      break;
-    case 3: 
-      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7402,0x0002,0x0202);
-      break;
-    case 4:
-      uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7403,0x0003,0x0303);
 
-  }*/
-  
-
-  /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
   printf("udp-sender.c: We have created a packet\n");
   collect_view_construct_message(&msg.msg, &parent,
                                  parent_etx, rtmetric,

@@ -226,6 +226,15 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
 }
 
 
+int get_list_length(){
+
+  int listlength = list_length(mylist);
+  printf("Sending queue size in beacon %d\n",listlength);
+  return listlength;
+
+}
+
+
 
 
 

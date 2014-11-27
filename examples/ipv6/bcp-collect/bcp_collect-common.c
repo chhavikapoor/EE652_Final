@@ -94,6 +94,9 @@ bcp_collect_common_recv(const rimeaddr_t *originator, uint8_t seqno, uint8_t hop
   uint16_t data;
   int i;
 
+  printf("BCP: Receiving packet from: %u with hops: %u \n",
+         originator->u8[0] + (originator->u8[1] << 8), hops);
+
   printf("%u", 8 + payload_len / 2);
   /* Timestamp. Ignore time synch for now. */
   time = get_time();

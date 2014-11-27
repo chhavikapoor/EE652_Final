@@ -49,6 +49,7 @@
 #include "net/uip-icmp6.h"
 #include "net/rpl/rpl-private.h"
 #include "net/packetbuf.h"
+#include "lib/list.h"
 #include "bcp.h" 
 
 #include <limits.h>
@@ -58,6 +59,7 @@
 
 #include "net/uip-debug.h"
  extern unsigned short node_id;
+ extern   list_t mylist;
 
 #if UIP_CONF_IPV6
 /*---------------------------------------------------------------------------*/
@@ -160,11 +162,7 @@ beacon_input(void)
 
   printf("received a beacon: %d\n", buffer[0]);
 
-  /*dio.prefix_info.length = buffer[i + 2];
-  dio.prefix_info.flags = buffer[i + 3];
-  dio.prefix_info.lifetime = get32(buffer, i + 8);
-  PRINTF("RPL: Copying prefix information\n");
-  memcpy(&dio.prefix_info.prefix, &buffer[i + 16], 16);*/
+
   bcp_process_beacon(&from, &dio);
 }
 /*---------------------------------------------------------------------------*/
@@ -183,23 +181,14 @@ beacon_output(uip_ipaddr_t *uc_addr)
   pos = 0;
 
   buffer = UIP_ICMP_PAYLOAD;
-  buffer[pos++] = node_id;   //added by chhavi  
+  if(node_id == 1){
+  buffer[pos++] = 0;   //added by chhavi  
+  }
+  else{
+   buffer[pos++] = get_list_length();   //added by chhavi   
+  }
   buffer[pos++] = 1;
-  /*buffer[pos++] = RPL_OPTION_PREFIX_INFO;
-  //buffer[pos++] = 30; // always 30 bytes + 2 long 
-  buffer[pos++] = dag->prefix_info.length;
-  buffer[pos++] = dag->prefix_info.flags;
-  set32(buffer, pos, dag->prefix_info.lifetime);
-  pos += 4;
-  set32(buffer, pos, dag->prefix_info.lifetime);
-  pos += 4;
-  memset(&buffer[pos], 0, 4);
-  pos += 4;
-  memcpy(&buffer[pos], &dag->prefix_info.prefix, 16);
-  pos += 16;
-  PRINTF("RPL: Sending prefix info in DIO for ");
-  PRINT6ADDR(&dag->prefix_info.prefix);
-  PRINTF("\n");*/
+
   uip_create_linklocal_rplnodes_mcast(&addr);
   uip_icmp6_send(&addr, ICMP6_RPL, RPL_CODE_DIO, pos);
 

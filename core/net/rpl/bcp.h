@@ -46,3 +46,4 @@ void handle_bcp_timer();
 void bcp_reset_beacon_timer();
 bcp_parent_t * bcp_find_parent(uip_ipaddr_t *addr);
 bcp_parent_t * bcp_find_best_parent();
+int get_list_length();
