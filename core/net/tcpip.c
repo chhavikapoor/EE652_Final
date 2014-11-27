@@ -842,7 +842,7 @@ PROCESS_THREAD(tcpip_process, ev, data)
 #if UIP_CONF_IPV6 && UIP_CONF_IPV6_RPL
   //printf("tcpip.c: We are initializing RPL over here\n");
    bcp_init();
-   rpl_init();
+   //rpl_init();
 #endif /* UIP_CONF_IPV6_RPL */
 
 //bcp_init

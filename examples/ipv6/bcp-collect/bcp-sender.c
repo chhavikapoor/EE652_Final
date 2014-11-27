@@ -107,6 +107,8 @@ bcp_tcpip_handler(void)
   struct collect_view_data_msg msg1;
 
   hdr_information_t hdr_info; 
+  bcp_parent_t *preferred_parent;
+  rimeaddr_t parent;
 
 
   if(uip_newdata()) {
@@ -121,9 +123,32 @@ bcp_tcpip_handler(void)
     hdr_info.sender.u8[0] = sender.u8[0];
     hdr_info.sender.u8[1] = sender.u8[1];
 
-     uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id-1);
 
-  switch(node_id){
+
+
+      uip_ds6_nbr_t *nbr;
+
+      preferred_parent = bcp_find_best_parent();
+      nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
+      //nbr = uip_ds6_nbr_lookup(&addr);
+      printf("we are after neighbor lookup \n");
+
+      if(nbr != NULL) {
+        printf("Yay.neighbor is not null\n");
+        /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
+        parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
+        parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
+
+        printf("rime addr %d:%d\n",parent.u8[RIMEADDR_SIZE - 1],parent.u8[RIMEADDR_SIZE - 2]);
+        //parent_etx = 2;
+      }
+
+
+
+
+     uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]);
+
+  /*switch(node_id){
     case 2: 
       uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
       break;
@@ -133,7 +158,7 @@ bcp_tcpip_handler(void)
     case 4:
       uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7403,0x0003,0x0303);
 
-  }
+  }*/
   
    msg = appdata ;
  
@@ -185,8 +210,9 @@ bcp_collect_common_send(void)
   /* Let's suppose we have only one instance */
   
       uip_ds6_nbr_t *nbr;
-      //nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
-      nbr = uip_ds6_nbr_lookup(&addr);
+      preferred_parent = bcp_find_best_parent();
+      nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
+      //nbr = uip_ds6_nbr_lookup(&addr);
       printf("we are after neighbor lookup \n");
 
       if(nbr != NULL) {
@@ -196,7 +222,7 @@ bcp_collect_common_send(void)
         parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
 
         printf("rime addr %d:%d\n",parent.u8[RIMEADDR_SIZE - 1],parent.u8[RIMEADDR_SIZE - 2]);
-        parent_etx = 2;
+        //parent_etx = 2;
       }
       
     rtmetric = 3;
@@ -204,9 +230,9 @@ bcp_collect_common_send(void)
     num_neighbors = 1;
 
 
-    uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id-1);
+    uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]) ;
 
-  switch(node_id){
+  /*switch(node_id){
     case 2: 
       uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
       break;
@@ -216,7 +242,7 @@ bcp_collect_common_send(void)
     case 4:
       uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7403,0x0003,0x0303);
 
-  }
+  }*/
   
 
   /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */

@@ -48,7 +48,45 @@ NBR_TABLE(bcp_parent_t, bcp_parents);    //#define NBR_TABLE(type, name)   //mak
 
 
 
+bcp_parent_t *
+bcp_find_best_parent()
+{
+  /*traverse the list of parents and find the one with lowest queue size*/
 
+
+   bcp_parent_t *p, *temp_parent;
+   uint8_t temp_weight = 255;
+
+  p = nbr_table_head(bcp_parents);
+
+  while(p != NULL) {
+    if(temp_weight > p->weight) {
+      temp_weight = p->weight;
+      temp_parent =  p;
+    }
+    
+
+
+  p = nbr_table_next(bcp_parents, p);
+    
+  }
+
+printf("best parent weight is %d\n", temp_weight); 
+return temp_parent;
+
+
+}
+
+
+
+
+bcp_parent_t *
+bcp_find_parent(uip_ipaddr_t *addr)
+{
+  uip_ds6_nbr_t *ds6_nbr = uip_ds6_nbr_lookup(addr);
+  uip_lladdr_t *lladdr = uip_ds6_nbr_get_ll(ds6_nbr);
+  return nbr_table_get_from_lladdr(bcp_parents, (rimeaddr_t *)lladdr);
+}
 
 
 
@@ -56,8 +94,13 @@ NBR_TABLE(bcp_parent_t, bcp_parents);    //#define NBR_TABLE(type, name)   //mak
 uip_ipaddr_t *
 bcp_get_parent_ipaddr(bcp_parent_t *p)
 {
+  printf("this is the found parent %d\n", p->weight);
+  uip_ipaddr_t* ipaddress = NULL;
   rimeaddr_t *lladdr = nbr_table_get_lladdr(bcp_parents, p);
-  return uip_ds6_nbr_ipaddr_from_lladdr((uip_lladdr_t *)lladdr);
+
+  ipaddress = uip_ds6_nbr_ipaddr_from_lladdr((uip_lladdr_t *)lladdr);
+  printf("We found this IP %d \n", ipaddress->u8[15]);
+  return ipaddress;
 }
 
 
@@ -122,28 +165,20 @@ bcp_remove_parent(bcp_parent_t *parent)
 
 
 bcp_parent_t *
-bcp_add_parent( rpl_dio_t *dio, uip_ipaddr_t *addr)
+bcp_add_parent( bcp_beacon_t *dio, uip_ipaddr_t *addr)
 {
   printf("bcp.c: we are adding a parent over here\n");
-  rpl_parent_t *p = NULL;
-  /* Is the parent known by ds6? Drop this request if not.
-   * Typically, the parent is added upon receiving a DIO. */
-  /*uip_lladdr_t *lladdr = uip_ds6_nbr_lladdr_from_ipaddr(addr);
-
-  PRINTF("RPL: rpl_add_parent lladdr %p\n", lladdr);
+  bcp_parent_t *p = NULL;
+ 
+  uip_lladdr_t *lladdr = uip_ds6_nbr_lladdr_from_ipaddr(addr);
   if(lladdr != NULL) {
 
-    printf("rpl-dag: This is the information we added in DIO %d\n", dio->queue_size);
-    //* Add parent in rpl_parents 
-    p = nbr_table_add_lladdr(rpl_parents, (rimeaddr_t *)lladdr);
-    p->dag = dag;
-    p->rank = dio->rank;
-    p->dtsn = dio->dtsn;
-    p->link_metric = RPL_INIT_LINK_METRIC * RPL_DAG_MC_ETX_DIVISOR;
-#if RPL_DAG_MC != RPL_DAG_MC_NONE
-    memcpy(&p->mc, &dio->mc, sizeof(p->mc));
-#endif // RPL_DAG_MC != RPL_DAG_MC_NONE 
-  }*/
+    /*Add bcp_parent*/
+    p = nbr_table_add_lladdr(bcp_parents, (rimeaddr_t *)lladdr);
+    p->weight = dio->queue_size;
+    p->etx = dio->etx;
+  }
+
 
   return p;
 }
@@ -152,11 +187,23 @@ bcp_add_parent( rpl_dio_t *dio, uip_ipaddr_t *addr)
 
 
 void
-bcp_process_beacon(uip_ipaddr_t *from, rpl_dio_t *dio)
+bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *dio)
 {
  
-
+        bcp_parent_t* parent = NULL;
         printf("bcp process beacon\n");
+
+        if( (parent = bcp_find_parent(from)) != NULL){
+
+           parent->etx = dio->etx;
+           parent->weight = dio->queue_size;
+           printf("Found a bcp parent\n");
+        }
+        else{
+          printf("add bcp parent\n");
+          bcp_add_parent(dio,from);
+        }
+
 		    bcp_reset_beacon_timer();
       	
         /*if(dio->prefix_info.length != 0) {

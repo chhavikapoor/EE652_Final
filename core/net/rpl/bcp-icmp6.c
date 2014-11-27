@@ -109,7 +109,7 @@ beacon_input(void)
 {
   unsigned char *buffer;
   uint8_t buffer_length;
-  rpl_dio_t dio;
+  bcp_beacon_t dio;
   uint8_t subopt_type;
   int i;
   int len;
@@ -156,6 +156,7 @@ beacon_input(void)
   i = 0;
   buffer = UIP_ICMP_PAYLOAD;
   dio.queue_size = buffer[i++];   //added by chhavi
+  dio.etx = buffer[i++];
 
   printf("received a beacon: %d\n", buffer[0]);
 
@@ -183,6 +184,7 @@ beacon_output(uip_ipaddr_t *uc_addr)
 
   buffer = UIP_ICMP_PAYLOAD;
   buffer[pos++] = node_id;   //added by chhavi  
+  buffer[pos++] = 1;
   /*buffer[pos++] = RPL_OPTION_PREFIX_INFO;
   //buffer[pos++] = 30; // always 30 bytes + 2 long 
   buffer[pos++] = dag->prefix_info.length;
