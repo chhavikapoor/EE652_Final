@@ -93,7 +93,7 @@ collect_view_construct_message(struct collect_view_data_msg *msg,
   last_transmit = energest_type_time(ENERGEST_TYPE_TRANSMIT);
   last_listen = energest_type_time(ENERGEST_TYPE_LISTEN);
 
-  memcpy(&msg->parent, &parent->u8[RIMEADDR_SIZE - 2], 2);
+ // memcpy(&msg->parent, &parent->u8[RIMEADDR_SIZE - 2], 2);
   msg->parent_etx = parent_etx;
   msg->current_rtmetric = current_rtmetric;
   msg->num_neighbors = num_neighbors;

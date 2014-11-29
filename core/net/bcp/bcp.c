@@ -54,26 +54,29 @@ bcp_find_best_parent()
   /*traverse the list of parents and find the one with lowest queue size*/
 
 
-   bcp_parent_t *p, *temp_parent;
-   uint8_t temp_weight = 255;
+   bcp_parent_t *p = NULL, *temp_parent= NULL;
+   uint8_t temp_weight = 0;
 
   p = nbr_table_head(bcp_parents);
 
   while(p != NULL) {
-    if(temp_weight > p->weight) {
+    if(temp_weight < p->weight && p->weight > 0) {
       temp_weight = p->weight;
       temp_parent =  p;
     }
     
-
-
   p = nbr_table_next(bcp_parents, p);
     
   }
 
-printf("best parent weight is %d\n", temp_weight); 
-return temp_parent;
-
+  if(temp_weight > 0){
+    printf("best parent weight is %d\n", temp_weight); 
+    return temp_parent;
+  }
+  else{
+    printf("No parent with positive weight\n");
+    return NULL;
+  }
 
 }
 
@@ -175,7 +178,7 @@ bcp_add_parent( bcp_beacon_t *dio, uip_ipaddr_t *addr)
 
     /*Add bcp_parent*/
     p = nbr_table_add_lladdr(bcp_parents, (rimeaddr_t *)lladdr);
-    p->weight = dio->queue_size;
+    p->weight = (get_list_length() - dio->queue_size);   // weight setting other parameters as 1
     p->etx = dio->etx;
   }
 
@@ -196,7 +199,7 @@ bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *dio)
         if( (parent = bcp_find_parent(from)) != NULL){
 
            parent->etx = dio->etx;
-           parent->weight = dio->queue_size;
+           parent->weight = (get_list_length() - dio->queue_size);  //weight setting other parameters as one
            printf("Found a bcp parent\n");
         }
         else{

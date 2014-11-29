@@ -75,7 +75,7 @@
 #include "net/uip-icmp6.h"
 #include "net/uip-nd6.h"
 #include "net/uip-ds6.h"
-//#include "net/rpl/bcp.h" 
+
 
 #include <string.h>
 
@@ -91,7 +91,7 @@
 
 #if UIP_CONF_IPV6_RPL
 #include "rpl/rpl.h"
-#include "rpl/bcp.h" 
+#include "bcp/bcp.h" 
 #endif /* UIP_CONF_IPV6_RPL */
 
  void bcp_uip_process(hdr_information_t* hdr_info); 

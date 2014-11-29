@@ -32,7 +32,7 @@
 #include "contiki-net.h"
 #include "net/uip.h"
 #include "net/rpl/rpl.h"
-#include "net/rpl/bcp.h" 
+#include "net/bcp/bcp.h" 
 #include "net/rime/rimeaddr.h"
 
 #include "net/netstack.h"

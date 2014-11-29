@@ -70,7 +70,7 @@ extern struct uip_fallback_interface UIP_FALLBACK_INTERFACE;
 
 #if UIP_CONF_IPV6_RPL
 #include "rpl/rpl.h"
-#include "rpl/bcp.h"
+#include "bcp/bcp.h"
 #endif
 
 process_event_t tcpip_event;

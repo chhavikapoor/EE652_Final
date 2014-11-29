@@ -58,8 +58,7 @@ extern unsigned short node_id;
 static struct uip_udp_conn *server_conn;
 extern list_t mylist_list;
 static struct uip_udp_conn *client_conn;
-static uip_ipaddr_t server_ipaddr;
-uip_ipaddr_t addr;
+
 
 
 
@@ -124,38 +123,20 @@ bcp_tcpip_handler(void)
     hdr_info.sender.u8[1] = sender.u8[1];
 
 
-      uip_ds6_nbr_t *nbr;
-
-      preferred_parent = bcp_find_best_parent();
-      nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
-      //nbr = uip_ds6_nbr_lookup(&addr);
-      printf("we are after neighbor lookup \n");
-
-      if(nbr != NULL) {
-        printf("Yay.neighbor is not null\n");
-        /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
-        parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
-        parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
-
-        printf("rime addr %d:%d\n",parent.u8[RIMEADDR_SIZE - 1],parent.u8[RIMEADDR_SIZE - 2]);
-        //parent_etx = 2;
-      }
-
-     uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]);
-
-     printf("BCP: Receiving packet from: %d forwarding to: %d\n", sender.u8[0], nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1] );
-  
    msg = appdata ;
  
    if(node_id != 1){
+
+   printf("BCP: Receiving packet from: %d", sender.u8[0]); 
    bcp_uip_udp_packet_sendto(client_conn, msg, sizeof(msg1)+2,
-                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT),&hdr_info);
+                         UIP_HTONS(UDP_SERVER_PORT),&hdr_info);
   }
-  else{
+}
+  if(node_id == 1){
     bcp_collect_common_recv(&sender, seqno, hops,
                         appdata + 2, uip_datalen() - 2);
    }
-  }
+  
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -172,8 +153,7 @@ bcp_collect_common_send(void)
   uint16_t rtmetric;
   uint16_t num_neighbors;
   uint16_t beacon_interval;
-  bcp_parent_t *preferred_parent;
-  rimeaddr_t parent;
+ 
   //uip_ipaddr_t* addr;
   //rpl_dag_t *dag;
 
@@ -189,43 +169,18 @@ bcp_collect_common_send(void)
   }
   msg.seqno = seqno;
 
-  rimeaddr_copy(&parent, &rimeaddr_null);
-  parent_etx = 0;
 
-  /* Let's suppose we have only one instance */
-  
-      uip_ds6_nbr_t *nbr;
-      preferred_parent = bcp_find_best_parent();
-      nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
-      //nbr = uip_ds6_nbr_lookup(&addr);
-      printf("we are after neighbor lookup \n");
-
-      if(nbr != NULL) {
-        printf("Yay.neighbor is not null\n");
-        /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
-        parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
-        parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
-
-        printf("rime addr %d:%d\n",parent.u8[RIMEADDR_SIZE - 1],parent.u8[RIMEADDR_SIZE - 2]);
-        //parent_etx = 2;
-      }
-      
-    rtmetric = 3;
-    beacon_interval = 4;
-    num_neighbors = 1;
-
-
-    uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]) ;
 
   if(node_id != 1){
   printf("udp-sender.c: We have created a packet\n");
-  collect_view_construct_message(&msg.msg, &parent,
+  collect_view_construct_message(&msg.msg, NULL,
                                  parent_etx, rtmetric,
                                  num_neighbors, beacon_interval);
 
   bcp_uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
-                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT), NULL);
+                         UIP_HTONS(UDP_SERVER_PORT), NULL);
 }
+
 }
 /*---------------------------------------------------------------------------*/
 void
