@@ -44,6 +44,7 @@ extern uint16_t uip_slen;
 #include "net/uip-udp-packet.h"
 #include "bcp/bcp.h"
 #include "lib/list.h"
+#include "lib/memb.h"
 #include "collect-view.h"
 
 #include <string.h>
@@ -51,7 +52,7 @@ extern uint16_t uip_slen;
 void bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len, uint16_t toport, hdr_information_t*);
 void bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t*);
 
-#define PERIOD_POP 4
+#define PERIOD_POP 3
 #define RANDWAIT (PERIOD_POP)
 int pop_active = 1;
 static uip_ipaddr_t server_ipaddr;
@@ -60,7 +61,7 @@ uip_ipaddr_t addr;
 PROCESS(test_process, "test process");
 AUTOSTART_PROCESSES(&test_process);
 
-#define MAX_STACK_LENGTH 25
+#define MAX_STACK_LENGTH 15
 
 
 int init_flag = 0;
@@ -74,11 +75,14 @@ struct chhavi_list{
   int len;
   
   uint16_t toport;
-  struct hdr_information_t *hdr_info;
+  struct hdr_information *hdr_info;
 
 };
 
 LIST(mylist);
+MEMB(list_memb, struct chhavi_list, MAX_STACK_LENGTH);
+MEMB(data_memb, struct collect_view_data_msg, MAX_STACK_LENGTH);
+MEMB(hdr_memb, struct hdr_information,MAX_STACK_LENGTH);
 
 
 
@@ -123,10 +127,13 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
       //printf("uip-udp-packet.c: this is the value of the init flag %d\n", init_flag);
       init_flag = 1;
      list_init(mylist);
+     memb_init(&list_memb);
+     memb_init(&data_memb);
+     memb_init(&hdr_memb);
     }
    
-   struct chhavi_list *queue_element = (struct chhavi_list*)malloc(sizeof(struct chhavi_list)); 
-   struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)malloc(sizeof(struct collect_view_data_msg));
+   struct chhavi_list *queue_element = (struct chhavi_list*)memb_alloc(&list_memb); 
+   struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)memb_alloc(&data_memb);
    memcpy(temp_msg,data,len);
    
    queue_element->c = c;
@@ -184,7 +191,7 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
            uint16_t toport, hdr_information_t* hdr_info)
 {
   int length;
-  struct hdr_information_t *temp_hdr_info;
+  struct hdr_information *temp_hdr_info;
   
     if(init_flag == 0){
       printf("uip-udp-packet.c: initializing the list\n");
@@ -195,13 +202,13 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
 
 
    if(packets_pushed < MAX_STACK_LENGTH){
-       struct chhavi_list *queue_element = (struct chhavi_list*)malloc(sizeof(struct chhavi_list)); 
-       struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)malloc(sizeof(struct collect_view_data_msg));
+       struct chhavi_list *queue_element = (struct chhavi_list*)memb_alloc(&list_memb); 
+       struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)memb_alloc(&data_memb);
        memcpy(temp_msg,data,len);
 
        if(hdr_info!=NULL){
         printf("Hdr info not null\n");
-        temp_hdr_info = (struct hdr_information_t *)malloc(sizeof( hdr_information_t));
+        temp_hdr_info = (hdr_information_t *)memb_alloc(&hdr_memb);
         memcpy(temp_hdr_info,hdr_info, sizeof( hdr_information_t));
        }
         
@@ -334,9 +341,16 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
                 (temp_element->c)->rport = curport;
                
 
-              free(temp_element->data);
-              free(temp_element->hdr_info);
-              free(temp_element);
+              memb_free(&data_memb, temp_element->data );
+              printf("Memb_free 1\n");
+              printf("Memb the hdr info ptr %p\n", temp_element->hdr_info);
+              if(temp_element->hdr_info != NULL){
+                memb_free( &hdr_memb, temp_element->hdr_info);
+              }
+              printf("Memb_free 2\n");
+              memb_free( &list_memb, temp_element);
+              printf("Memb the element ptr %p\n", temp_element);
+              printf("Memb_free 3\n");
             }
           }
         }

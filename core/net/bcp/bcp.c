@@ -55,7 +55,7 @@ bcp_find_best_parent()
 
 
    bcp_parent_t *p = NULL, *temp_parent= NULL;
-   uint8_t temp_weight = 0;
+   int temp_weight = 0;
 
   p = nbr_table_head(bcp_parents);
 
@@ -70,7 +70,7 @@ bcp_find_best_parent()
     
   }
 
-  if(temp_weight > 0){
+  if((temp_weight-1) > 0){
     printf("best parent weight is %d\n", temp_weight); 
     return temp_parent;
   }
