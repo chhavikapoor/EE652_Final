@@ -127,59 +127,59 @@ bcp_tcpip_handler(void)
  
    if(node_id != 1){
 
-   printf("BCP: Receiving packet from: %d", sender.u8[0]); 
+   printf("BCP: Receiving packet from: %d\n", sender.u8[0]); 
    bcp_uip_udp_packet_sendto(client_conn, msg, sizeof(msg1)+2,
                          UIP_HTONS(UDP_SERVER_PORT),&hdr_info);
   }
-}
+
   if(node_id == 1){
     bcp_collect_common_recv(&sender, seqno, hops,
                         appdata + 2, uip_datalen() - 2);
    }
+ }
   
 }
 /*---------------------------------------------------------------------------*/
 void
 bcp_collect_common_send(void)
 {
-  static uint8_t seqno;
-  struct {
-    uint8_t seqno;
-    uint8_t for_alignment;
-    struct collect_view_data_msg msg;
-  } msg;
-  /* struct collect_neighbor *n; */
-  uint16_t parent_etx;
-  uint16_t rtmetric;
-  uint16_t num_neighbors;
-  uint16_t beacon_interval;
- 
-  //uip_ipaddr_t* addr;
-  //rpl_dag_t *dag;
-
-  if(client_conn == NULL) {
-    /* Not setup yet */
-    return;
-  }
-  memset(&msg, 0, sizeof(msg));
-  seqno++;
-  if(seqno == 0) {
-    /* Wrap to 128 to identify restarts */
-    seqno = 128;
-  }
-  msg.seqno = seqno;
-
-
 
   if(node_id != 1){
-  printf("udp-sender.c: We have created a packet\n");
-  collect_view_construct_message(&msg.msg, NULL,
-                                 parent_etx, rtmetric,
-                                 num_neighbors, beacon_interval);
+      static uint8_t seqno;
+      struct {
+        uint8_t seqno;
+        uint8_t for_alignment;
+        struct collect_view_data_msg msg;
+      } msg;
+      /* struct collect_neighbor *n; */
+      uint16_t parent_etx;
+      uint16_t rtmetric;
+      uint16_t num_neighbors;
+      uint16_t beacon_interval;
+     
+      //uip_ipaddr_t* addr;
+      //rpl_dag_t *dag;
 
-  bcp_uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
-                         UIP_HTONS(UDP_SERVER_PORT), NULL);
-}
+      if(client_conn == NULL) {
+        /* Not setup yet */
+        return;
+      }
+      memset(&msg, 0, sizeof(msg));
+      seqno++;
+      if(seqno == 0) {
+        /* Wrap to 128 to identify restarts */
+        seqno = 128;
+      }
+      msg.seqno = seqno;
+
+      printf("udp-sender.c: We have created a packet\n");
+      collect_view_construct_message(&msg.msg, NULL,
+                                     parent_etx, rtmetric,
+                                     num_neighbors, beacon_interval);
+
+      bcp_uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
+                             UIP_HTONS(UDP_SERVER_PORT), NULL);
+  }
 
 }
 /*---------------------------------------------------------------------------*/
@@ -267,7 +267,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
   while(1) {
     PROCESS_YIELD();
     if(ev == tcpip_event) {
-      printf("receiving a packet/n");
+      //printf("receiving a packet/n");
       bcp_tcpip_handler();
     }
   }

@@ -182,10 +182,12 @@ beacon_output(uip_ipaddr_t *uc_addr)
 
   buffer = UIP_ICMP_PAYLOAD;
   if(node_id == 1){
+  printf("BCP: Sending queue size in beacon %d\n", 0);  
   buffer[pos++] = 0;   //added by chhavi  
   }
   else{
    buffer[pos++] = get_list_length();   //added by chhavi   
+   printf("BCP: Sending queue size in beacon %d\n", buffer[pos -1 ]);
   }
   buffer[pos++] = 1;
 

@@ -3,7 +3,7 @@
 
 struct bcp_parent {
   struct bcp_parent *next;
-  uint8_t weight;
+  uint8_t queue_size;
   uint8_t etx;
   uint8_t updated;
 };

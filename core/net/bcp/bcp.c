@@ -60,8 +60,9 @@ bcp_find_best_parent()
   p = nbr_table_head(bcp_parents);
 
   while(p != NULL) {
-    if(temp_weight < p->weight && p->weight > 0) {
-      temp_weight = p->weight;
+
+    if(temp_weight < (get_list_length()- p->queue_size )) {
+      temp_weight = get_list_length()- p->queue_size ;
       temp_parent =  p;
     }
     
@@ -97,7 +98,7 @@ bcp_find_parent(uip_ipaddr_t *addr)
 uip_ipaddr_t *
 bcp_get_parent_ipaddr(bcp_parent_t *p)
 {
-  printf("this is the found parent %d\n", p->weight);
+  printf("this is the found parent %d\n", p->queue_size);
   uip_ipaddr_t* ipaddress = NULL;
   rimeaddr_t *lladdr = nbr_table_get_lladdr(bcp_parents, p);
 
@@ -113,7 +114,7 @@ void
 bcp_init(void)
 {
   printf("bcp.c: bcp is being initialized\n");
-  uip_ipaddr_t rplmaddr;
+  uip_ipaddr_t bcpmaddr;
   PRINTF("RPL started\n");
   //default_instance = NULL;
 
@@ -122,8 +123,8 @@ bcp_init(void)
   bcp_reset_periodic_timer();
 
   /* add rpl multicast address */
-  uip_create_linklocal_rplnodes_mcast(&rplmaddr);
-  uip_ds6_maddr_add(&rplmaddr);
+  uip_create_linklocal_rplnodes_mcast(&bcpmaddr);
+  uip_ds6_maddr_add(&bcpmaddr);
 
 
 }
@@ -178,7 +179,7 @@ bcp_add_parent( bcp_beacon_t *dio, uip_ipaddr_t *addr)
 
     /*Add bcp_parent*/
     p = nbr_table_add_lladdr(bcp_parents, (rimeaddr_t *)lladdr);
-    p->weight = (get_list_length() - dio->queue_size);   // weight setting other parameters as 1
+    p->queue_size = dio->queue_size;   
     p->etx = dio->etx;
   }
 
@@ -199,7 +200,7 @@ bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *dio)
         if( (parent = bcp_find_parent(from)) != NULL){
 
            parent->etx = dio->etx;
-           parent->weight = (get_list_length() - dio->queue_size);  //weight setting other parameters as one
+           parent->queue_size = dio->queue_size;  //weight setting other parameters as one
            printf("Found a bcp parent\n");
         }
         else{

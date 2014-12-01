@@ -51,7 +51,7 @@ extern uint16_t uip_slen;
 void bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len, uint16_t toport, hdr_information_t*);
 void bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t*);
 
-#define PERIOD_POP 5
+#define PERIOD_POP 4
 #define RANDWAIT (PERIOD_POP)
 int pop_active = 1;
 static uip_ipaddr_t server_ipaddr;
@@ -60,7 +60,7 @@ uip_ipaddr_t addr;
 PROCESS(test_process, "test process");
 AUTOSTART_PROCESSES(&test_process);
 
-#define MAX_STACK_LENGTH 10
+#define MAX_STACK_LENGTH 25
 
 
 int init_flag = 0;
@@ -230,7 +230,7 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
 int get_list_length(){
 
   int listlength = list_length(mylist);
-  printf("BCP: Sending queue size in beacon %d\n",listlength);
+  
   return listlength;
 
 }
