@@ -114,7 +114,7 @@ static uint8_t (* outputfunc)(uip_lladdr_t *a);
 
 uint8_t
 tcpip_output(uip_lladdr_t *a)
-{ printf("TCP out\n");
+{ //printf("TCP out\n");
   int ret;
   if(outputfunc != NULL) {
     ret = outputfunc(a);
@@ -135,7 +135,7 @@ static uint8_t (* outputfunc)(void);
 uint8_t
 tcpip_output(void)
 { 
-  printf("We are inside tcp_output\n");
+  //printf("We are inside tcp_output\n");
   if(outputfunc != NULL) {
     return outputfunc();
   }
@@ -186,7 +186,7 @@ static void
 packet_input(void)
 {
 
-  printf("we are in packet input\n");
+  //printf("we are in packet input\n");
 #if UIP_CONF_IP_FORWARD
   if(uip_len > 0) {
     tcpip_is_forwarding = 1;
@@ -543,13 +543,13 @@ tcpip_input(void)
 void
 tcpip_ipv6_output(void)
 {
-  printf("inside tcp_ipv6_o\n");
+  //printf("inside tcp_ipv6_o\n");
   uip_ds6_nbr_t *nbr = NULL;
   uip_ipaddr_t *nexthop;
 
   if(uip_len == 0) {
     //printf("Returning from tcp_ipv6_output as uip_len =0\n");
-    printf("E1\n");
+    //printf("E1\n");
     return;
   }
 
@@ -576,7 +576,7 @@ tcpip_ipv6_output(void)
        nexthop address. */
     //if(uip_ds6_is_addr_onlink(&UIP_IP_BUF->destipaddr)){
      if(1){   //making this change so that we can bypass the check for the prefix
-      printf("dest is on our link\n");
+      //printf("dest is on our link\n");
       nexthop = &UIP_IP_BUF->destipaddr;
     } else {
       uip_ds6_route_t *route;
@@ -601,7 +601,7 @@ tcpip_ipv6_output(void)
 	       UIP_FALLBACK_INTERFACE.output();
         #else
           PRINTF("tcpip_ipv6_output: Destination off-link but no route\n");
-          printf("no uip fallback\n");
+          //printf("no uip fallback\n");
         #endif /* !UIP_FALLBACK_INTERFACE */
           uip_len = 0;
           printf("E4\n");
@@ -639,7 +639,7 @@ tcpip_ipv6_output(void)
         }
       }
 
-      printf("NHP\n");
+      //printf("NHP\n");
 #if TCPIP_CONF_ANNOTATE_TRANSMISSIONS
       if(nexthop != NULL) {
         static uint8_t annotate_last;

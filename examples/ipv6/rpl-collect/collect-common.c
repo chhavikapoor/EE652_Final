@@ -42,8 +42,6 @@
 #include "dev/leds.h"
 #include "collect-common.h"
 
- 
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -52,17 +50,13 @@ static unsigned long time_offset;
 static int send_active = 1;
 
 #ifndef PERIOD
-#define PERIOD 10
+#define PERIOD 60
 #endif
 #define RANDWAIT (PERIOD)
 
 /*---------------------------------------------------------------------------*/
 PROCESS(collect_common_process, "collect common process");
 AUTOSTART_PROCESSES(&collect_common_process);
-
-
-
-
 /*---------------------------------------------------------------------------*/
 static unsigned long
 get_time(void)
@@ -110,7 +104,7 @@ collect_common_recv(const rimeaddr_t *originator, uint8_t seqno, uint8_t hops,
   leds_blink();
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(collect_common_process, ev, data)    //this thread is responsible for sending a packet for queuing
+PROCESS_THREAD(collect_common_process, ev, data)
 {
   static struct etimer period_timer, wait_timer;
   PROCESS_BEGIN();
@@ -118,10 +112,10 @@ PROCESS_THREAD(collect_common_process, ev, data)    //this thread is responsible
   collect_common_net_init();
 
   /* Send a packet every 60-62 seconds. */
-  etimer_set(&period_timer, CLOCK_SECOND * PERIOD);   //setting the period time to the value given by argument 2
+  etimer_set(&period_timer, CLOCK_SECOND * PERIOD);
   while(1) {
-    PROCESS_WAIT_EVENT();                            
-    if(ev == serial_line_event_message) {    //some sort of message will be sent. 
+    PROCESS_WAIT_EVENT();
+    if(ev == serial_line_event_message) {
       char *line;
       line = (char *)data;
       if(strncmp(line, "collect", 7) == 0 ||
@@ -175,6 +169,3 @@ PROCESS_THREAD(collect_common_process, ev, data)    //this thread is responsible
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
-
-
-

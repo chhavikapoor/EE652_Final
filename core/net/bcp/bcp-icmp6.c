@@ -124,24 +124,24 @@ beacon_input(void)
   uip_ipaddr_copy(&from, &UIP_IP_BUF->srcipaddr); //set the from address
 
   /* DAG Information Object */
-  PRINTF("RPL: Received a DIO from ");
+  PRINTF("BCP: Received a beacon from ");
   PRINT6ADDR(&from);
   PRINTF("\n");
 
   if((nbr = uip_ds6_nbr_lookup(&from)) == NULL) {
-    printf("adding a new neighbor\n");
+    //printf("adding a new neighbor\n");
     if((nbr = uip_ds6_nbr_add(&from, (uip_lladdr_t *)
                               packetbuf_addr(PACKETBUF_ADDR_SENDER),
                               0, NBR_REACHABLE)) != NULL) {
       /* set reachable timer */
       stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
-      PRINTF("RPL: Neighbor added to neighbor cache ");
+      PRINTF("BCP: Neighbor added to neighbor cache ");
       PRINT6ADDR(&from);
       PRINTF(", ");
       PRINTLLADDR((uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_SENDER));
       PRINTF("\n");
     } else {
-      PRINTF("RPL: Out of Memory, dropping DIO from ");
+      PRINTF("BCP: Out of Memory, dropping beacon from ");
       PRINT6ADDR(&from);
       PRINTF(", ");
       PRINTLLADDR((uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_SENDER));
@@ -149,18 +149,18 @@ beacon_input(void)
       return;
     }
   } else {
-    PRINTF("RPL: Neighbor already in neighbor cache\n");
+    PRINTF("BCP: Neighbor already in neighbor cache\n");
   }
 
   buffer_length = uip_len - uip_l3_icmp_hdr_len;
 
-  /* Process the DIO base option. */
+  /* Process the BEACON. */
   i = 0;
   buffer = UIP_ICMP_PAYLOAD;
   dio.queue_size = buffer[i++];   //added by chhavi
   dio.etx = buffer[i++];
 
-  printf("received a beacon: %d\n", buffer[0]);
+  //printf("received a beacon: %d\n", buffer[0]);
 
 
   bcp_process_beacon(&from, &dio);
@@ -168,15 +168,13 @@ beacon_input(void)
 /*---------------------------------------------------------------------------*/
 void
 beacon_output(uip_ipaddr_t *uc_addr)
-{ printf("bcp.c: sending out beacon\n");
+{ //printf("bcp.c: sending out beacon\n");
   unsigned char *buffer;
   uip_ipaddr_t addr;
   int pos;
   
 
-  /* DAG Information Object */   //this is where the DIO is being formed
-
-  //hardcoding the prefix information for the time being
+  /* BEACON */   //this is where the beacon is being formed
 
   pos = 0;
 
@@ -202,7 +200,7 @@ uip_bcp_input(void)
 {
 
    //beacon_input();
-  PRINTF("Received an RPL control message\n");
+  PRINTF("Received an BCP control message\n");
   switch(UIP_ICMP_BUF->icode) {
   case RPL_CODE_DIO:
     beacon_input();
@@ -217,7 +215,7 @@ uip_bcp_input(void)
     dao_ack_input();
     break;*/
   default:
-    PRINTF("RPL: received an unknown ICMP6 code (%u)\n", UIP_ICMP_BUF->icode);
+    PRINTF("BCP: received an unknown ICMP6 code (%u)\n", UIP_ICMP_BUF->icode);
     break;
   }
 

@@ -58,6 +58,7 @@ extern unsigned short node_id;
 static struct uip_udp_conn *server_conn;
 extern list_t mylist_list;
 static struct uip_udp_conn *client_conn;
+int count =0;
 
 
 
@@ -123,7 +124,9 @@ bcp_tcpip_handler(void)
     hdr_info.sender.u8[1] = sender.u8[1];
 
 
-   msg = appdata ;
+   
+    msg = appdata ;
+  
  
    if(node_id != 1){
 
@@ -133,6 +136,8 @@ bcp_tcpip_handler(void)
   }
 
   if(node_id == 1){
+    msg->clock = msg->clock/CLOCK_SECOND;
+    printf("Sent at%lu %lu 0: \n", ((msg->clock >> 16) & 0xffff), msg->clock & 0xffff);
     bcp_collect_common_recv(&sender, seqno, hops,
                         appdata + 2, uip_datalen() - 2);
    }
@@ -144,7 +149,7 @@ void
 bcp_collect_common_send(void)
 {
 
-  if(node_id != 1){
+  if(node_id != 1 ){
       static uint8_t seqno;
       struct {
         uint8_t seqno;
@@ -172,7 +177,7 @@ bcp_collect_common_send(void)
       }
       msg.seqno = seqno;
 
-      printf("udp-sender.c: We have created a packet\n");
+      //printf("bcp-sender.c: We have created a packet\n");
       collect_view_construct_message(&msg.msg, NULL,
                                      parent_etx, rtmetric,
                                      num_neighbors, beacon_interval);
@@ -267,7 +272,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
   while(1) {
     PROCESS_YIELD();
     if(ev == tcpip_event) {
-      //printf("receiving a packet/n");
       bcp_tcpip_handler();
     }
   }

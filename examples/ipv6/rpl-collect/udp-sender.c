@@ -32,7 +32,6 @@
 #include "net/uip-ds6.h"
 #include "net/uip-udp-packet.h"
 #include "net/rpl/rpl.h"
-//#include "bcp.h" 
 #include "dev/serial-line.h"
 #if CONTIKI_TARGET_Z1
 #include "dev/uart0.h"
@@ -40,10 +39,7 @@
 #include "dev/uart1.h"
 #endif
 #include "collect-common.h"
-//#include "bcp-collect-common.h" 
 #include "collect-view.h"
-#include "list.h"
-#include "packetstack.h" 
 
 #include <stdio.h>
 #include <string.h>
@@ -54,14 +50,12 @@
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
-
-extern list_t mylist_list;
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
 
 /*---------------------------------------------------------------------------*/
-PROCESS(udp_client_process, "UDP client process");   // we are creating a process over here
-AUTOSTART_PROCESSES(&udp_client_process, &collect_common_process, &test_process); //we are starting the udp client process and the collect common process.
+PROCESS(udp_client_process, "UDP client process");
+AUTOSTART_PROCESSES(&udp_client_process, &collect_common_process);
 /*---------------------------------------------------------------------------*/
 void
 collect_common_set_sink(void)
@@ -75,16 +69,12 @@ collect_common_net_print(void)
 {
   rpl_dag_t *dag;
   uip_ds6_route_t *r;
-  uip_ipaddr_t * temp_ip;
 
   /* Let's suppose we have only one instance */
   dag = rpl_get_any_dag();
   if(dag->preferred_parent != NULL) {
     PRINTF("Preferred parent: ");
-
-    temp_ip = rpl_get_parent_ipaddr(dag->preferred_parent);
-
-    PRINT6ADDR(temp_ip);
+    PRINT6ADDR(rpl_get_parent_ipaddr(dag->preferred_parent));
     PRINTF("\n");
   }
   for(r = uip_ds6_route_head();
@@ -120,7 +110,6 @@ collect_common_send(void)
   rpl_parent_t *preferred_parent;
   rimeaddr_t parent;
   rpl_dag_t *dag;
-  uip_ipaddr_t addr;
 
   if(client_conn == NULL) {
     /* Not setup yet */
@@ -144,10 +133,6 @@ collect_common_send(void)
     if(preferred_parent != NULL) {
       uip_ds6_nbr_t *nbr;
       nbr = uip_ds6_nbr_lookup(rpl_get_parent_ipaddr(preferred_parent));
-        //printf("HC\n");
-        //uip_ip6addr(&addr, 0xfe80,0,0,0,0x0212,0x7401,0x0001,0x0101);
-      //nbr = uip_ds6_nbr_lookup(&addr);
-      
       if(nbr != NULL) {
         /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
         parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
@@ -165,7 +150,6 @@ collect_common_send(void)
   }
 
   /* num_neighbors = collect_neighbor_list_num(&tc.neighbor_list); */
-  //printf("udp-sender.c: We have created a packet\n");
   collect_view_construct_message(&msg.msg, &parent,
                                  parent_etx, rtmetric,
                                  num_neighbors, beacon_interval);
@@ -232,8 +216,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   print_local_addresses();
 
-
-
   /* new connection with remote host */
   client_conn = udp_new(NULL, UIP_HTONS(UDP_SERVER_PORT), NULL);
   udp_bind(client_conn, UIP_HTONS(UDP_CLIENT_PORT));
@@ -242,10 +224,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PRINT6ADDR(&client_conn->ripaddr);
   PRINTF(" local/remote port %u/%u\n",
         UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
-
-
-  
-
 
   while(1) {
     PROCESS_YIELD();
@@ -256,6 +234,4 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   PROCESS_END();
 }
-
-
 /*---------------------------------------------------------------------------*/

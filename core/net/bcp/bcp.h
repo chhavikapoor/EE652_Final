@@ -5,7 +5,7 @@ struct bcp_parent {
   struct bcp_parent *next;
   uint8_t queue_size;
   uint8_t etx;
-  uint8_t updated;
+  struct ctimer parent_timer;
 };
 typedef struct bcp_parent bcp_parent_t;
 
@@ -39,6 +39,7 @@ void bcp_handle_periodic_timer(void *ptr);
 void bcp_nbr_init(void);
 void bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *dio);
 void handle_dio_timer(void *ptr);
+void handle_parent_timer(void* parent);
 void bcp_remove_parent(bcp_parent_t *parent);
 bcp_parent_t * bcp_add_parent( bcp_beacon_t *dio, uip_ipaddr_t *addr);
 //void bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *dio);

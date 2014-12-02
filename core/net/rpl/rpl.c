@@ -219,7 +219,6 @@ rpl_ipv6_neighbor_callback(uip_ds6_nbr_t *nbr)
 void
 rpl_init(void)
 {
-  printf("rpl.c: RPL is being initialized\n");
   uip_ipaddr_t rplmaddr;
   PRINTF("RPL started\n");
   default_instance = NULL;

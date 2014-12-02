@@ -81,7 +81,6 @@ rpl_instance_t *default_instance;
 void
 rpl_dag_init(void)
 {
-  printf("rpl-dag.c: We are initializing the dag\n");
   nbr_table_register(rpl_parents, (nbr_table_callback *)rpl_remove_parent);
 }
 /*---------------------------------------------------------------------------*/
@@ -537,7 +536,6 @@ rpl_free_dag(rpl_dag_t *dag)
 rpl_parent_t *
 rpl_add_parent(rpl_dag_t *dag, rpl_dio_t *dio, uip_ipaddr_t *addr)
 {
-  printf("rpl-dag.c: we are adding a parent over here\n");
   rpl_parent_t *p = NULL;
   /* Is the parent known by ds6? Drop this request if not.
    * Typically, the parent is added upon receiving a DIO. */
@@ -545,8 +543,6 @@ rpl_add_parent(rpl_dag_t *dag, rpl_dio_t *dio, uip_ipaddr_t *addr)
 
   PRINTF("RPL: rpl_add_parent lladdr %p\n", lladdr);
   if(lladdr != NULL) {
-
-    printf("rpl-dag: This is the information we added in DIO %d\n", dio->queue_size);
     /* Add parent in rpl_parents */
     p = nbr_table_add_lladdr(rpl_parents, (rimeaddr_t *)lladdr);
     p->dag = dag;
@@ -722,7 +718,6 @@ rpl_select_parent(rpl_dag_t *dag)
 void
 rpl_remove_parent(rpl_parent_t *parent)
 {
-  printf("rpl-dag.c: we are removing a parent from here\n");
   PRINTF("RPL: Removing parent ");
   PRINT6ADDR(rpl_get_parent_ipaddr(parent));
   PRINTF("\n");

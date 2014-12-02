@@ -100,7 +100,9 @@ bcp_collect_common_recv(const rimeaddr_t *originator, uint8_t seqno, uint8_t hop
   printf("%u", 8 + payload_len / 2);
   /* Timestamp. Ignore time synch for now. */
   time = get_time();
+  
   printf(" %lu %lu 0", ((time >> 16) & 0xffff), time & 0xffff);
+
   /* Ignore latency for now */
   printf(" %u %u %u %u",
          originator->u8[0] + (originator->u8[1] << 8), seqno, hops, 0);

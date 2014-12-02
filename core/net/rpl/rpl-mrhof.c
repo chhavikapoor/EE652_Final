@@ -136,7 +136,6 @@ neighbor_link_callback(rpl_parent_t *p, int status, int numtx)
 static rpl_rank_t
 calculate_rank(rpl_parent_t *p, rpl_rank_t base_rank)
 {
-  printf("rpl-mrhof.c: we are calculating rank \n");
   rpl_rank_t new_rank;
   rpl_rank_t rank_increase;
 
@@ -180,7 +179,7 @@ best_dag(rpl_dag_t *d1, rpl_dag_t *d2)
 
 static rpl_parent_t *
 best_parent(rpl_parent_t *p1, rpl_parent_t *p2)
-{ printf("We are finding the best parent \n");
+{
   rpl_dag_t *dag;
   rpl_path_metric_t min_diff;
   rpl_path_metric_t p1_metric;
