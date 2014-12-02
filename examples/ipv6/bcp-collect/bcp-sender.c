@@ -149,7 +149,8 @@ void
 bcp_collect_common_send(void)
 {
 
-  if(node_id != 1 ){
+  if(node_id != 1 && count++ <11){
+      printf("Hi\n");
       static uint8_t seqno;
       struct {
         uint8_t seqno;
@@ -251,6 +252,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
   bcp_print_local_addresses();
 
   bcp_reset_beacon_timer();
+
+  NETSTACK_RDC.off(1);
    
   /* new connection with remote host */
   client_conn = udp_new(NULL, UIP_HTONS(UDP_SERVER_PORT), NULL);

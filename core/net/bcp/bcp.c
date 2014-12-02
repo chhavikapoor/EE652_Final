@@ -19,9 +19,11 @@
 
 
 
-
+extern unsigned short node_id;
 static struct ctimer bcp_periodic_timer;
 static struct ctimer bcp_beacon_timer;
+
+int etx_val = 1;
 
 
 
@@ -41,29 +43,42 @@ bcp_find_best_parent()
 {
   /*traverse the list of parents and find the one with lowest queue size*/
 
-
    bcp_parent_t *p = NULL, *temp_parent= NULL;
    int temp_weight = 0;
-
+   int temp_queue_diff = 0;
+   uip_ipaddr_t *ip1 = NULL;
+   int etx;
+   int q_diff;
   p = nbr_table_head(bcp_parents);
 
   while(p != NULL) {
-
-    if(temp_weight < (get_list_length()- p->queue_size )) {
-      temp_weight = get_list_length()- p->queue_size ;
-      temp_parent =  p;
-    }
-    
-  p = nbr_table_next(bcp_parents, p);
+      ip1 = bcp_get_parent_ipaddr(p);
+      /*if((ip1->u8[15]) == 2){
+        printf("Node id %d\n", ip1->u8[15]);
+        etx_val = 1;
+        }
+        else{
+          printf("Node id %d\n", ip1->u8[15]);
+        etx_val = 1;
+        }*/
+      temp_queue_diff = (get_list_length()- p->queue_size);
+      printf("BCP: Node ID of neighbor is %d the queue difference is %d and the etx value is %d\n", ip1->u8[15], temp_queue_diff, etx_val);
+    if(temp_weight < (get_list_length()- p->queue_size ) - etx_val) {
+        temp_weight = get_list_length()- p->queue_size - etx_val;
+        temp_parent =  p;
+        etx = etx_val;
+        q_diff = temp_queue_diff;
+      }
+      p = nbr_table_next(bcp_parents, p);
     
   }
 
-  if((temp_weight-1) > 0){
+  if((temp_weight) > 0){
 
     uip_ipaddr_t *ip = NULL;
   
     ip = bcp_get_parent_ipaddr(temp_parent);
-    printf("BCP: Best parent %d\n", ip->u8[15]);
+    printf("BCP: Node ID of best parent is %d the queue difference is %d and the etx value is %d\n", ip->u8[15], q_diff, etx);
     //printf("best parent weight is %d\n", temp_weight); 
     return temp_parent;
   }
@@ -106,7 +121,7 @@ bcp_get_parent_ipaddr(bcp_parent_t *p)
 void
 bcp_init(void)
 {
-  //printf("bcp.c: bcp is being initialized\n");
+  //printf("bcp.c: BCP is being initialized\n");
   uip_ipaddr_t bcpmaddr;
   PRINTF("BCP started\n");
   //default_instance = NULL;
@@ -155,7 +170,7 @@ bcp_remove_parent(bcp_parent_t *parent)
   PRINT6ADDR(bcp_get_parent_ipaddr(parent));
   PRINTF("\n");
   ip = bcp_get_parent_ipaddr(parent);
-  //rpl_nullify_parent(parent);
+  
   printf("Timer: Parent timer expired. Remove parent %d\n", ip->u8[15]);
 
   nbr_table_remove(bcp_parents, parent);
@@ -176,7 +191,7 @@ bcp_add_parent( bcp_beacon_t *dio, uip_ipaddr_t *addr)
     p->queue_size = dio->queue_size;   
     p->etx = dio->etx;
     printf("Timer: Setting timer\n");
-    ctimer_set(&p->parent_timer, 5*CLOCK_SECOND, &handle_parent_timer, p);
+    ctimer_set(&p->parent_timer, 10*CLOCK_SECOND, &handle_parent_timer, p);
   }
 
 
@@ -191,18 +206,18 @@ bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *dio)
 {
  
         bcp_parent_t* parent = NULL;
-        //printf("bcp process beacon\n");
+        //printf("BCP process beacon\n");
 
         if( (parent = bcp_find_parent(from)) != NULL){
 
            parent->etx = dio->etx;
            parent->queue_size = dio->queue_size;  //weight setting other parameters as one
            printf("Timer: Resetting timer for %d\n", from->u8[15]);
-           ctimer_set(&parent->parent_timer, 5*CLOCK_SECOND, &handle_parent_timer, parent);
+           ctimer_set(&parent->parent_timer, 10*CLOCK_SECOND, &handle_parent_timer, parent);
            //printf("Found a bcp parent\n");
         }
         else{
-          //printf("add bcp parent\n");
+          //printf("Add bcp parent\n");
           bcp_add_parent(dio,from);
         }
 
@@ -218,9 +233,8 @@ void
 handle_bcp_timer()
 {
       
-      //PRINTF("RPL: Postponing DIO transmission since link local address is not ok\n");
-      //ctimer_set(&instance->dio_timer, CLOCK_SECOND, &handle_dio_timer, instance);
-      //printf("we are in handle bcp timer\n");
+      
+      //printf("We are in handle bcp timer\n");
       beacon_output(NULL);
   
 }
@@ -229,7 +243,7 @@ handle_bcp_timer()
 void
 bcp_reset_beacon_timer()
 {
-     //printf("resetting the timer\n");
+     //printf("Resetting the beacon timer\n");
      ctimer_set(&bcp_beacon_timer, CLOCK_SECOND, &handle_bcp_timer, NULL);   //just do this .. maybe think of using reset in its place
      
 }

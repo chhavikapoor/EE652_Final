@@ -52,7 +52,7 @@ extern uint16_t uip_slen;
 void bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len, uint16_t toport, hdr_information_t*);
 void bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t*);
 
-#define PERIOD_POP 2
+#define PERIOD_POP 3
 #define RANDWAIT (PERIOD_POP)
 int pop_active = 1;
 static uip_ipaddr_t server_ipaddr;
@@ -298,69 +298,65 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
               //printf("This is preferred parent %p\n",preferred_parent);
 
               if(preferred_parent!=NULL){
-              nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
-              //nbr = uip_ds6_nbr_lookup(&addr);
-              //printf("we are after neighbor lookup \n");
+                  nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
+                  //nbr = uip_ds6_nbr_lookup(&addr);
+                  
+                  if(nbr != NULL) {
+                    //printf("Yay.neighbor is not null\n");
+                    /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
+                    parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
+                    parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
 
-              if(nbr != NULL) {
-                //printf("Yay.neighbor is not null\n");
-                /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
-                parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
-                parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
-
-                //printf("rime addr %d:%d\n",parent.u8[RIMEADDR_SIZE - 1],parent.u8[RIMEADDR_SIZE - 2]);
-                //parent_etx = 2;
-              }
+                    //printf("rime addr %d:%d\n",parent.u8[RIMEADDR_SIZE - 1],parent.u8[RIMEADDR_SIZE - 2]);
+                    //parent_etx = 2;
+                  }
+          
       
-  
-              uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]) ;
+                  uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]) ;
 
+                  struct chhavi_list* temp_element = NULL;
+                  //printf("This is the list length. Popping a packet %d\n", length_pop);
 
+                  temp_element = (struct chhavi_list*)list_pop(mylist);
+                  //length_pop = list_length(mylist);
+                  packets_pushed -- ;
 
+                  if(temp_element!= NULL){
 
-            struct chhavi_list* temp_element = NULL;
-            //printf("This is the list length. Popping a packet %d\n", length_pop);
+                  //printf("uip-udp-packet.c: We have popped an element and sent it\n");
 
-            temp_element = (struct chhavi_list*)list_pop(mylist);
-            //length_pop = list_length(mylist);
-            packets_pushed -- ;
+                        uip_ipaddr_t curaddr;
+                        uint16_t curport;
 
-            if(temp_element!= NULL){
+                      //if(temp_element->toaddr != NULL) {
+                      /* Save current IP addr/port. */
+                        uip_ipaddr_copy(&curaddr, &(temp_element->c)->ripaddr);
+                        curport = (temp_element->c)->rport;
 
-              //printf("uip-udp-packet.c: We have popped an element and sent it\n");
+                        /* Load new IP addr/port */
+                        uip_ipaddr_copy(&(temp_element->c)->ripaddr, &server_ipaddr);
+                        (temp_element->c)->rport = temp_element->toport;
 
-              uip_ipaddr_t curaddr;
-              uint16_t curport;
+                        //printf("This is the ipaddr %d\n", (temp_element->hdr_info)->sender.u8[0]);
 
-              //if(temp_element->toaddr != NULL) {
-              /* Save current IP addr/port. */
-                uip_ipaddr_copy(&curaddr, &(temp_element->c)->ripaddr);
-                curport = (temp_element->c)->rport;
+                        bcp_uip_udp_packet_send(temp_element->c, temp_element->data, temp_element->len, temp_element->hdr_info);
 
-                /* Load new IP addr/port */
-                uip_ipaddr_copy(&(temp_element->c)->ripaddr, &server_ipaddr);
-                (temp_element->c)->rport = temp_element->toport;
+                        /* Restore old IP addr/port */
+                        uip_ipaddr_copy(&(temp_element->c)->ripaddr, &curaddr);       
+                        (temp_element->c)->rport = curport;
+                       
 
-                //printf("This is the ipaddr %d\n", (temp_element->hdr_info)->sender.u8[0]);
-
-                bcp_uip_udp_packet_send(temp_element->c, temp_element->data, temp_element->len, temp_element->hdr_info);
-
-                /* Restore old IP addr/port */
-                uip_ipaddr_copy(&(temp_element->c)->ripaddr, &curaddr);       
-                (temp_element->c)->rport = curport;
-               
-
-              memb_free(&data_memb, temp_element->data );
-              //printf("Memb_free 1\n");
-              //printf("Memb the hdr info ptr %p\n", temp_element->hdr_info);
-              if(temp_element->hdr_info != NULL){
-                memb_free( &hdr_memb, temp_element->hdr_info);
-              }
-              //printf("Memb_free 2\n");
-              memb_free( &list_memb, temp_element);
-              //printf("Memb the element ptr %p\n", temp_element);
-              //printf("Memb_free 3\n");
-            }
+                        memb_free(&data_memb, temp_element->data );
+                        //printf("Memb_free 1\n");
+                        //printf("Memb the hdr info ptr %p\n", temp_element->hdr_info);
+                        if(temp_element->hdr_info != NULL){
+                          memb_free( &hdr_memb, temp_element->hdr_info);
+                        }
+                        //printf("Memb_free 2\n");
+                        memb_free( &list_memb, temp_element);
+                        //printf("Memb the element ptr %p\n", temp_element);
+                        //printf("Memb_free 3\n");
+                 }
           }
         }
       }
