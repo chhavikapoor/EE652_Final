@@ -59,7 +59,7 @@
 
 #include "net/uip-debug.h"
  extern unsigned short node_id;
- extern   list_t mylist;
+ 
 
 #if UIP_CONF_IPV6
 /*---------------------------------------------------------------------------*/
@@ -69,72 +69,35 @@
 #define UIP_ICMP_PAYLOAD ((unsigned char *)&uip_buf[uip_l2_l3_icmp_hdr_len])
 /*---------------------------------------------------------------------------*/
 
-static void beacon_input(void);
-//static uint8_t dao_sequence = RPL_LOLLIPOP_INIT;
-//extern rpl_of_t RPL_OF;
 
 
-
-/*---------------------------------------------------------------------------*/
-static uint32_t
-get32(uint8_t *buffer, int pos)
-{
-  return (uint32_t)buffer[pos] << 24 | (uint32_t)buffer[pos + 1] << 16 |
-         (uint32_t)buffer[pos + 2] << 8 | buffer[pos + 3];
-}
-/*---------------------------------------------------------------------------*/
-static void
-set32(uint8_t *buffer, int pos, uint32_t value)
-{
-  buffer[pos++] = value >> 24;
-  buffer[pos++] = (value >> 16) & 0xff;
-  buffer[pos++] = (value >> 8) & 0xff;
-  buffer[pos++] = value & 0xff;
-}
-/*---------------------------------------------------------------------------*/
-static uint16_t
-get16(uint8_t *buffer, int pos)
-{
-  return (uint16_t)buffer[pos] << 8 | buffer[pos + 1];
-}
-/*---------------------------------------------------------------------------*/
-static void
-set16(uint8_t *buffer, int pos, uint16_t value)
-{
-  buffer[pos++] = value >> 8;
-  buffer[pos++] = value & 0xff;
-}
-/*---------------------------------------------------------------------------*/
-
+/*****************************************************/
+/*            Receive BCP beacon                     */
+/*****************************************************/
 static void
 beacon_input(void)
 {
   unsigned char *buffer;
   uint8_t buffer_length;
-  bcp_beacon_t dio;
+  bcp_beacon_t beacon;
   uint8_t subopt_type;
   int i;
   int len;
   uip_ipaddr_t from;
   uip_ds6_nbr_t *nbr;
 
-  memset(&dio, 0, sizeof(dio));
-
-    
+  memset(&beacon, 0, sizeof(beacon)); 
   uip_ipaddr_copy(&from, &UIP_IP_BUF->srcipaddr); //set the from address
-
-  /* DAG Information Object */
   PRINTF("BCP: Received a beacon from ");
   PRINT6ADDR(&from);
   PRINTF("\n");
 
   if((nbr = uip_ds6_nbr_lookup(&from)) == NULL) {
-    //printf("adding a new neighbor\n");
     if((nbr = uip_ds6_nbr_add(&from, (uip_lladdr_t *)
                               packetbuf_addr(PACKETBUF_ADDR_SENDER),
                               0, NBR_REACHABLE)) != NULL) {
       /* set reachable timer */
-      stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
+      //stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
       PRINTF("BCP: Neighbor added to neighbor cache ");
       PRINT6ADDR(&from);
       PRINTF(", ");
@@ -157,15 +120,20 @@ beacon_input(void)
   /* Process the BEACON. */
   i = 0;
   buffer = UIP_ICMP_PAYLOAD;
-  dio.queue_size = buffer[i++];   //added by chhavi
-  dio.etx = buffer[i++];
+  beacon.queue_size = buffer[i++];   
+  beacon.etx = buffer[i++];
 
   //printf("received a beacon: %d\n", buffer[0]);
 
 
-  bcp_process_beacon(&from, &dio);
+  bcp_process_beacon(&from, &beacon);
 }
-/*---------------------------------------------------------------------------*/
+
+
+
+/*****************************************************/
+/*               Send BCP beacon                     */
+/*****************************************************/
 void
 beacon_output(uip_ipaddr_t *uc_addr)
 { //printf("bcp.c: sending out beacon\n");
@@ -181,19 +149,23 @@ beacon_output(uip_ipaddr_t *uc_addr)
   buffer = UIP_ICMP_PAYLOAD;
   if(node_id == 1){
   printf("BCP: Sending queue size in beacon %d\n", 0);  
-  buffer[pos++] = 0;   //added by chhavi  
+  buffer[pos++] = 0;   
   }
   else{
-   buffer[pos++] = get_list_length();   //added by chhavi   
+   buffer[pos++] = get_list_length();    
    printf("BCP: Sending queue size in beacon %d\n", buffer[pos -1 ]);
   }
   buffer[pos++] = 1;
 
-  uip_create_linklocal_rplnodes_mcast(&addr);
-  uip_icmp6_send(&addr, ICMP6_RPL, RPL_CODE_DIO, pos);
+  uip_create_linklocal_bcpnodes_mcast(&addr);
+  uip_icmp6_send(&addr, ICMP6_RPL, BCP_CODE_BEACON, pos);
 
 }
-/*---------------------------------------------------------------------------*/
+
+
+/*****************************************************/
+/*      Process BCP control message                  */
+/*****************************************************/
 
 void
 uip_bcp_input(void)
@@ -202,7 +174,7 @@ uip_bcp_input(void)
    //beacon_input();
   PRINTF("Received an BCP control message\n");
   switch(UIP_ICMP_BUF->icode) {
-  case RPL_CODE_DIO:
+  case BCP_CODE_BEACON:
     beacon_input();
     break;
   /*case RPL_CODE_DIS:

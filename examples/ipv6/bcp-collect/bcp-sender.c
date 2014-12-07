@@ -66,7 +66,7 @@ int count =0;
 
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "UDP client process");   // we are creating a process over here
-AUTOSTART_PROCESSES(&udp_client_process, &collect_common_process, &test_process); //we are starting the udp client process and the collect common process.
+AUTOSTART_PROCESSES(&udp_client_process, &collect_common_process, &bcp_pop_process); //we are starting the udp client process and the collect common process.
 /*---------------------------------------------------------------------------*/
 void
 bcp_collect_common_set_sink(void)
@@ -85,7 +85,7 @@ bcp_collect_common_net_print(void)
   //dag = rpl_get_any_dag();
   /*if(dag->preferred_parent != NULL) {   //insert some code about getting the parent inforamtion
     PRINTF("Preferred parent: ");
-    PRINT6ADDR(bcp_get_parent_ipaddr(dag->preferred_parent));   //write a function about getting the ipaddress of the parent
+    PRINT6ADDR(bcp_get_nbr_ipaddr(dag->preferred_parent));   //write a function about getting the ipaddress of the parent
     PRINTF("\n");
   }
   for(r = uip_ds6_route_head();
@@ -107,7 +107,7 @@ bcp_tcpip_handler(void)
   struct collect_view_data_msg msg1;
 
   hdr_information_t hdr_info; 
-  bcp_parent_t *preferred_parent;
+  bcp_nbr_t *preferred_parent;
   rimeaddr_t parent;
 
 

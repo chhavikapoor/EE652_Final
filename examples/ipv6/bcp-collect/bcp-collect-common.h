@@ -52,7 +52,7 @@ void bcp_collect_common_recv(const rimeaddr_t *originator, uint8_t seqno,
 void bcp_collect_common_set_send_active(int active);
 
 PROCESS_NAME(collect_common_process);
-PROCESS_NAME(test_process);
+PROCESS_NAME(bcp_pop_process);
 
 
 

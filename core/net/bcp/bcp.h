@@ -1,27 +1,26 @@
 #include "net/rpl/rpl-private.h"
 
 
-
+#define BCP_CODE_BEACON 1
 #define uip_create_linklocal_bcpnodes_mcast(addr) \
   uip_ip6addr((addr), 0xff02, 0, 0, 0, 0, 0, 0, 0x001a)
 
 
-struct bcp_parent {
-  struct bcp_parent *next;
+struct bcp_nbr {
+  struct bcp_nbr *next;
   uint8_t queue_size;
   uint8_t etx;
-  struct ctimer parent_timer;
+  struct ctimer nbr_timer;
 };
-typedef struct bcp_parent bcp_parent_t;
+typedef struct bcp_nbr bcp_nbr_t;
 
 
 
 struct bcp_beacon {
-  
-  //rpl_prefix_t prefix_info
   uint8_t queue_size;
   uint8_t etx;	
 };
+typedef struct bcp_beacon bcp_beacon_t;
 
 
 struct hdr_information {
@@ -33,23 +32,18 @@ struct hdr_information {
 typedef struct hdr_information hdr_information_t;
 
 
-typedef struct bcp_beacon bcp_beacon_t;
 
-
-
-uip_ipaddr_t *bcp_get_parent_ipaddr(bcp_parent_t *p);
 void bcp_init(void);
 void bcp_reset_periodic_timer(void);
 void bcp_handle_periodic_timer(void *ptr);
 void bcp_nbr_init(void);
-void bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *dio);
-void handle_dio_timer(void *ptr);
-void handle_parent_timer(void* parent);
-void bcp_remove_parent(bcp_parent_t *parent);
-bcp_parent_t * bcp_add_parent( bcp_beacon_t *dio, uip_ipaddr_t *addr);
-//void bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *dio);
+void bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *beacon);
+void handle_nbr_timer(void* nbr);
+void bcp_remove_nbr(bcp_nbr_t *nbr);
 void handle_bcp_timer();
 void bcp_reset_beacon_timer();
-bcp_parent_t * bcp_find_parent(uip_ipaddr_t *addr);
-bcp_parent_t * bcp_find_best_parent();
 int get_list_length();
+uip_ipaddr_t *bcp_get_nbr_ipaddr(bcp_nbr_t *n);
+bcp_nbr_t * bcp_find_nbr(uip_ipaddr_t *addr);
+bcp_nbr_t * bcp_find_best_parent();
+bcp_nbr_t * bcp_add_nbr( bcp_beacon_t *beacon, uip_ipaddr_t *addr);

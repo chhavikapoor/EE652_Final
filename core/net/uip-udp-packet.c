@@ -58,110 +58,43 @@ int pop_active = 1;
 static uip_ipaddr_t server_ipaddr;
 uip_ipaddr_t addr;
 
-PROCESS(test_process, "test process");
-AUTOSTART_PROCESSES(&test_process);
+PROCESS(bcp_pop_process, "bcp pop process");
+AUTOSTART_PROCESSES(&bcp_pop_process);
 
 #define MAX_STACK_LENGTH 15
 
 
 int init_flag = 0;
 int packets_pushed = 0;
-typedef struct chhavi_list;
-struct chhavi_list{
+typedef struct bcp_list;
+struct bcp_list{
 
-  struct chhavi_list* next;
+  struct bcp_list* next;
   struct uip_udp_conn *c; 
   const void *data; 
   int len;
-  
   uint16_t toport;
   struct hdr_information *hdr_info;
 
 };
 
-LIST(mylist);
-MEMB(list_memb, struct chhavi_list, MAX_STACK_LENGTH);
+LIST(bcplist);
+MEMB(list_memb, struct bcp_list, MAX_STACK_LENGTH);
 MEMB(data_memb, struct collect_view_data_msg, MAX_STACK_LENGTH);
 MEMB(hdr_memb, struct hdr_information,MAX_STACK_LENGTH);
-
-
-
-/*---------------------------------------------------------------------------*/
-void
-uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len)
-{
-
-
-#if UIP_UDP
-  if(data != NULL) {
-    uip_udp_conn = c;
-    uip_slen = len;
-    memcpy(&uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN], data,
-           len > UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN?
-           UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
-    uip_process(UIP_UDP_SEND_CONN);
-
-    //bcp_uip_process();
-#if UIP_CONF_IPV6
-    //printf("uip-udp-packet.c: Calling tcpip_ipv6_output\n");
-    tcpip_ipv6_output();
-#else
-    if(uip_len > 0) {
-      //printf("uip-udp-packet.c: Calling tcpip_output\n");
-      tcpip_output();
-    }
-#endif
-  }
-  uip_slen = 0;
-#endif /* UIP_UDP */
-}
-/*---------------------------------------------------------------------------*/
-void
-uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
-		       const uip_ipaddr_t *toaddr, uint16_t toport)
-{
-  int length;
-  
-    if(init_flag == 0){
-      //printf("uip-udp-packet.c: initializing the list\n");
-      //printf("uip-udp-packet.c: this is the value of the init flag %d\n", init_flag);
-      init_flag = 1;
-     list_init(mylist);
-     memb_init(&list_memb);
-     memb_init(&data_memb);
-     memb_init(&hdr_memb);
-    }
-   
-   struct chhavi_list *queue_element = (struct chhavi_list*)memb_alloc(&list_memb); 
-   struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)memb_alloc(&data_memb);
-   memcpy(temp_msg,data,len);
-   
-   queue_element->c = c;
-   queue_element->data = temp_msg;
-   queue_element->len = len;
-   //queue_element->toaddr = toaddr;
-   queue_element->toport = toport;
-   
-
-   if(packets_pushed < MAX_STACK_LENGTH){
-     packets_pushed ++ ;
-     //printf("uip-udp-packet.c: We are pushing a packet\n");
-     list_push(mylist, queue_element);
-     //printf("This is the list length after pushing a packet %d\n", list_length(mylist));
-    }
-
-   
-}
 
 
 /*********************************************BCP********************************************/
 
 
+/*****************************************************/
+/*  Send popped packet for transmission              */
+/*****************************************************/
+
+
 void
 bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t* hdr_info)
 {
-
-
 #if UIP_UDP
   if(data != NULL) {
     uip_udp_conn = c;
@@ -184,7 +117,10 @@ bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_i
   uip_slen = 0;
 #endif /* UIP_UDP */
 }
-/*---------------------------------------------------------------------------*/
+
+/*****************************************************/
+/*  Push packets into the stack                      */
+/*****************************************************/
 void
 bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
            uint16_t toport, hdr_information_t* hdr_info)
@@ -193,15 +129,16 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
   struct hdr_information *temp_hdr_info;
   
     if(init_flag == 0){
-      //printf("uip-udp-packet.c: initializing the list\n");
-      //printf("uip-udp-packet.c: this is the value of the init flag %d\n", init_flag);
       init_flag = 1;
-     list_init(mylist);
+      list_init(bcplist);
+      memb_init(&list_memb);
+      memb_init(&data_memb);
+      memb_init(&hdr_memb);
     }
 
 
    if(packets_pushed < MAX_STACK_LENGTH){
-       struct chhavi_list *queue_element = (struct chhavi_list*)memb_alloc(&list_memb); 
+       struct bcp_list *queue_element = (struct bcp_list*)memb_alloc(&list_memb); 
        struct collect_view_data_msg *temp_msg = (struct collect_view_data_msg*)memb_alloc(&data_memb);
        memset(temp_msg,0,len);
        memcpy(temp_msg,data,len);
@@ -218,16 +155,14 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
        //queue_element->toaddr = toaddr;
        queue_element->toport = toport;
        if(hdr_info!=NULL){
-       queue_element->hdr_info = temp_hdr_info;
+        queue_element->hdr_info = temp_hdr_info;
        }
        else{
         queue_element->hdr_info = NULL;
        }
              
          packets_pushed ++ ;
-         //printf("uip-udp-packet.c: We are pushing a packet\n");
-         list_push(mylist, queue_element);
-     //printf("This is the list length after pushing a packet %d\n", list_length(mylist));
+         list_push(bcplist, queue_element);
     }
 
     else{
@@ -238,38 +173,37 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
         printf("BCP: Dropping generated packet as the stack is full\n");
       }
     }
-
-   
+ 
 }
 
 
+/*****************************************************/
+/*            Get stack occupancy                    */
+/*****************************************************/
+
 int get_list_length(){
 
-  int listlength = list_length(mylist);
-  
+  int listlength = list_length(bcplist);
   return listlength;
 
 }
 
 
+/*****************************************************/
+/*   Pop packets from the stack                      */
+/*****************************************************/
 
-
-
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sending a packet for queuing
+PROCESS_THREAD(bcp_pop_process, ev, data)    //this thread is responsible for sending a packet for queuing
 {
   static struct etimer period_timer, wait_timer;
-
-  bcp_parent_t *preferred_parent;
+  bcp_nbr_t *preferred_parent;
   rimeaddr_t parent;
-
   int length_pop = 0;
+
   PROCESS_BEGIN();
 
-  //collect_common_net_init();
-
-  /* Send a packet every 60-62 seconds. */
-  etimer_set(&period_timer, CLOCK_SECOND * PERIOD_POP);   //setting the period time to the value given by argument 2
+  //setting the period time to the value given by argument 2
+  etimer_set(&period_timer, CLOCK_SECOND * PERIOD_POP);   
   while(1) {
     PROCESS_WAIT_EVENT();                            
     
@@ -283,26 +217,19 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
           //printf("Process timer occurred 3\n");
           if(pop_active) {
         
-       
-            length_pop = list_length(mylist);
+            length_pop = list_length(bcplist);
             //printf("Popping. Queue size is %d\n", length_pop);
             if(length_pop > 0){
              
               rimeaddr_copy(&parent, &rimeaddr_null);
-   
 
-          /* Let's suppose we have only one instance */
-          
               uip_ds6_nbr_t *nbr;
               preferred_parent = bcp_find_best_parent();
               //printf("This is preferred parent %p\n",preferred_parent);
 
               if(preferred_parent!=NULL){
-                  nbr = uip_ds6_nbr_lookup(bcp_get_parent_ipaddr(preferred_parent));
-                  //nbr = uip_ds6_nbr_lookup(&addr);
-                  
+                  nbr = uip_ds6_nbr_lookup(bcp_get_nbr_ipaddr(preferred_parent));
                   if(nbr != NULL) {
-                    //printf("Yay.neighbor is not null\n");
                     /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
                     parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
                     parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
@@ -311,51 +238,43 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
                     //parent_etx = 2;
                   }
           
-      
                   uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]) ;
-
-                  struct chhavi_list* temp_element = NULL;
+                  struct bcp_list* temp_element = NULL;
                   //printf("This is the list length. Popping a packet %d\n", length_pop);
 
-                  temp_element = (struct chhavi_list*)list_pop(mylist);
-                  //length_pop = list_length(mylist);
+                  temp_element = (struct bcp_list*)list_pop(bcplist);
                   packets_pushed -- ;
 
                   if(temp_element!= NULL){
 
                   //printf("uip-udp-packet.c: We have popped an element and sent it\n");
 
-                        uip_ipaddr_t curaddr;
-                        uint16_t curport;
+                    uip_ipaddr_t curaddr;
+                    uint16_t curport;
 
-                      //if(temp_element->toaddr != NULL) {
-                      /* Save current IP addr/port. */
-                        uip_ipaddr_copy(&curaddr, &(temp_element->c)->ripaddr);
-                        curport = (temp_element->c)->rport;
+                    //if(temp_element->toaddr != NULL) {
+                    /* Save current IP addr/port. */
+                    uip_ipaddr_copy(&curaddr, &(temp_element->c)->ripaddr);
+                    curport = (temp_element->c)->rport;
 
-                        /* Load new IP addr/port */
-                        uip_ipaddr_copy(&(temp_element->c)->ripaddr, &server_ipaddr);
-                        (temp_element->c)->rport = temp_element->toport;
+                    /* Load new IP addr/port */
+                    uip_ipaddr_copy(&(temp_element->c)->ripaddr, &server_ipaddr);
+                    (temp_element->c)->rport = temp_element->toport;
 
-                        //printf("This is the ipaddr %d\n", (temp_element->hdr_info)->sender.u8[0]);
+                    //printf("This is the ipaddr %d\n", (temp_element->hdr_info)->sender.u8[0]);
 
-                        bcp_uip_udp_packet_send(temp_element->c, temp_element->data, temp_element->len, temp_element->hdr_info);
+                    bcp_uip_udp_packet_send(temp_element->c, temp_element->data, temp_element->len, temp_element->hdr_info);
 
-                        /* Restore old IP addr/port */
-                        uip_ipaddr_copy(&(temp_element->c)->ripaddr, &curaddr);       
-                        (temp_element->c)->rport = curport;
-                       
-
-                        memb_free(&data_memb, temp_element->data );
-                        //printf("Memb_free 1\n");
-                        //printf("Memb the hdr info ptr %p\n", temp_element->hdr_info);
-                        if(temp_element->hdr_info != NULL){
-                          memb_free( &hdr_memb, temp_element->hdr_info);
-                        }
-                        //printf("Memb_free 2\n");
-                        memb_free( &list_memb, temp_element);
-                        //printf("Memb the element ptr %p\n", temp_element);
-                        //printf("Memb_free 3\n");
+                    /* Restore old IP addr/port */
+                    uip_ipaddr_copy(&(temp_element->c)->ripaddr, &curaddr);       
+                    (temp_element->c)->rport = curport;
+                   
+                    memb_free(&data_memb, temp_element->data );
+                    if(temp_element->hdr_info != NULL){
+                      memb_free( &hdr_memb, temp_element->hdr_info);
+                    }
+                    memb_free( &list_memb, temp_element);
+                     
                  }
           }
         }
@@ -365,5 +284,52 @@ PROCESS_THREAD(test_process, ev, data)    //this thread is responsible for sendi
 }
 
   PROCESS_END();
+}
+
+
+
+/*----------------------------------------------------------------------------*/
+
+void
+uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len)
+{
+#if UIP_UDP
+  if(data != NULL) {
+      uip_udp_conn = c;
+      uip_slen = len;
+      memcpy(&uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN], data,
+      len > UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN?
+      UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
+      uip_process(UIP_UDP_SEND_CONN);
+      #if UIP_CONF_IPV6
+      tcpip_ipv6_output();
+      #else
+      if(uip_len > 0) {
+      tcpip_output();
+    }
+      #endif
+  }
+  uip_slen = 0;
+#endif /* UIP_UDP */
+}
+/*---------------------------------------------------------------------------*/
+void
+uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
+const uip_ipaddr_t *toaddr, uint16_t toport)
+{
+  uip_ipaddr_t curaddr;
+  uint16_t curport;
+  if(toaddr != NULL) {
+  /* Save current IP addr/port. */
+    uip_ipaddr_copy(&curaddr, &c->ripaddr);
+    curport = c->rport;
+    /* Load new IP addr/port */
+    uip_ipaddr_copy(&c->ripaddr, toaddr);
+    c->rport = toport;
+    uip_udp_packet_send(c, data, len);
+    /* Restore old IP addr/port */
+    uip_ipaddr_copy(&c->ripaddr, &curaddr);
+    c->rport = curport;
+  }
 }
 
