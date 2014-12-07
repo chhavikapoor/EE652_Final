@@ -131,7 +131,7 @@ bcp_init(void)
   bcp_reset_periodic_timer();
 
   /* add rpl multicast address */
-  uip_create_linklocal_rplnodes_mcast(&bcpmaddr);
+  uip_create_linklocal_bcpnodes_mcast(&bcpmaddr);
   uip_ds6_maddr_add(&bcpmaddr);
 
 

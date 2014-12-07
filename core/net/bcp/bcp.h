@@ -1,6 +1,11 @@
 #include "net/rpl/rpl-private.h"
 
 
+
+#define uip_create_linklocal_bcpnodes_mcast(addr) \
+  uip_ip6addr((addr), 0xff02, 0, 0, 0, 0, 0, 0, 0x001a)
+
+
 struct bcp_parent {
   struct bcp_parent *next;
   uint8_t queue_size;
