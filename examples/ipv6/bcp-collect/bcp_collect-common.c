@@ -122,11 +122,11 @@ PROCESS_THREAD(collect_common_process, ev, data)    //this thread is responsible
 
   bcp_collect_common_net_init();
 
-  /* Send a packet every 60-62 seconds. */
-  etimer_set(&period_timer, CLOCK_SECOND * PERIOD);   //setting the period time to the value given by argument 2
+  
+  etimer_set(&period_timer, (CLOCK_SECOND * PERIOD));   //setting the period time to the value given by argument 2
   while(1) {
     PROCESS_WAIT_EVENT();                            
-    if(ev == serial_line_event_message) {    //some sort of message will be sent. 
+    if(ev == serial_line_event_message) {    
       char *line;
       line = (char *)data;
       if(strncmp(line, "collect", 7) == 0 ||

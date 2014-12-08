@@ -14,14 +14,11 @@ struct bcp_nbr {
 };
 typedef struct bcp_nbr bcp_nbr_t;
 
-
-
 struct bcp_beacon {
   uint8_t queue_size;
   uint8_t etx;	
 };
 typedef struct bcp_beacon bcp_beacon_t;
-
 
 struct hdr_information {
   rimeaddr_t sender;
@@ -31,11 +28,7 @@ struct hdr_information {
 };
 typedef struct hdr_information hdr_information_t;
 
-
-
 void bcp_init(void);
-void bcp_reset_periodic_timer(void);
-void bcp_handle_periodic_timer(void *ptr);
 void bcp_nbr_init(void);
 void bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *beacon);
 void handle_nbr_timer(void* nbr);

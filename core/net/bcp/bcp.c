@@ -134,27 +134,12 @@ bcp_init(void)
   PRINTF("BCP started\n");
   bcp_nbr_init();
 
-  /* add rpl multicast address */
+  /* add bcp multicast address */
   uip_create_linklocal_bcpnodes_mcast(&bcpmaddr);
   uip_ds6_maddr_add(&bcpmaddr);
 
 
 }
-
-
-void
-bcp_reset_periodic_timer(void)
-{
-  ctimer_set(&bcp_periodic_timer, CLOCK_SECOND, bcp_handle_periodic_timer, NULL);
-}
-
-
-void
-bcp_handle_periodic_timer(void *ptr)
-{
-  ctimer_reset(&bcp_periodic_timer);
-}
-
 
 
 /*****************************************************/
@@ -177,7 +162,7 @@ void
 bcp_remove_nbr(bcp_nbr_t *nbr)
 {
   uip_ipaddr_t *ip = NULL;
-  PRINTF("BCP: Removing parent ");
+  PRINTF("BCP: Removing neighbor ");
   PRINT6ADDR(bcp_get_nbr_ipaddr(nbr));
   PRINTF("\n");
   ip = bcp_get_nbr_ipaddr(nbr);

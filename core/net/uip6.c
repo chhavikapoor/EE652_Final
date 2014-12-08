@@ -2335,20 +2335,11 @@ void bcp_uip_process(hdr_information_t* hdr_info){
   UIP_UDP_BUF->destport = uip_udp_conn->rport;
 
   uip_ipaddr_copy(&UIP_IP_BUF->destipaddr, &uip_udp_conn->ripaddr);
-
- 
   uip_ds6_select_src(&UIP_IP_BUF->srcipaddr, &UIP_IP_BUF->destipaddr);
-   //uip_ipaddr_t addr_t;
-   //uip_ipaddr_copy(&addr_t, &UIP_IP_BUF->srcipaddr);
-   //uip_ipaddr_t *addr = &addr_t;
-  //printf("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15]); 
 
-  if(hdr_info!=NULL){
-
-   
+  if(hdr_info!=NULL){  
    UIP_IP_BUF->srcipaddr.u8[15] = hdr_info->sender.u8[0];
-   
- }
+  }
  
 
   uip_appdata = &uip_buf[UIP_LLH_LEN + UIP_IPTCPH_LEN];

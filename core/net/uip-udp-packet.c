@@ -52,7 +52,7 @@ extern uint16_t uip_slen;
 void bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len, uint16_t toport, hdr_information_t*);
 void bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t*);
 
-#define PERIOD_POP 3
+#define PERIOD_POP 1
 #define RANDWAIT (PERIOD_POP)
 int pop_active = 1;
 static uip_ipaddr_t server_ipaddr;
@@ -61,7 +61,7 @@ uip_ipaddr_t addr;
 PROCESS(bcp_pop_process, "bcp pop process");
 AUTOSTART_PROCESSES(&bcp_pop_process);
 
-#define MAX_STACK_LENGTH 15
+#define MAX_STACK_LENGTH 25
 
 
 int init_flag = 0;
@@ -84,7 +84,7 @@ MEMB(data_memb, struct collect_view_data_msg, MAX_STACK_LENGTH);
 MEMB(hdr_memb, struct hdr_information,MAX_STACK_LENGTH);
 
 
-/*********************************************BCP********************************************/
+/***************************************BCP********************************************/
 
 
 /*****************************************************/
@@ -128,14 +128,13 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
   int length;
   struct hdr_information *temp_hdr_info;
   
-    if(init_flag == 0){
+  if(init_flag == 0){
       init_flag = 1;
       list_init(bcplist);
       memb_init(&list_memb);
       memb_init(&data_memb);
       memb_init(&hdr_memb);
-    }
-
+  }
 
    if(packets_pushed < MAX_STACK_LENGTH){
        struct bcp_list *queue_element = (struct bcp_list*)memb_alloc(&list_memb); 
@@ -144,7 +143,6 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
        memcpy(temp_msg,data,len);
 
        if(hdr_info!=NULL){
-        //printf("Hdr info not null\n");
         temp_hdr_info = (hdr_information_t *)memb_alloc(&hdr_memb);
         memcpy(temp_hdr_info,hdr_info, sizeof( hdr_information_t));
        }
@@ -161,8 +159,8 @@ bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
         queue_element->hdr_info = NULL;
        }
              
-         packets_pushed ++ ;
-         list_push(bcplist, queue_element);
+       packets_pushed ++ ;
+       list_push(bcplist, queue_element);
     }
 
     else{
@@ -193,7 +191,7 @@ int get_list_length(){
 /*   Pop packets from the stack                      */
 /*****************************************************/
 
-PROCESS_THREAD(bcp_pop_process, ev, data)    //this thread is responsible for sending a packet for queuing
+PROCESS_THREAD(bcp_pop_process, ev, data)    
 {
   static struct etimer period_timer, wait_timer;
   bcp_nbr_t *preferred_parent;
@@ -203,30 +201,24 @@ PROCESS_THREAD(bcp_pop_process, ev, data)    //this thread is responsible for se
   PROCESS_BEGIN();
 
   //setting the period time to the value given by argument 2
-  etimer_set(&period_timer, CLOCK_SECOND * PERIOD_POP);   
+  etimer_set(&period_timer, (CLOCK_SECOND * PERIOD_POP));   
   while(1) {
-    PROCESS_WAIT_EVENT();                            
+  PROCESS_WAIT_EVENT();                            
     
     if(ev == PROCESS_EVENT_TIMER) {
-      //printf("Process timer occurred 1\n");
       if(data == &period_timer) {
-        //printf("Process timer occurred 2\n");
         etimer_reset(&period_timer);
         etimer_set(&wait_timer, random_rand() % (CLOCK_SECOND * RANDWAIT));
-      } else if(data == &wait_timer) {
-          //printf("Process timer occurred 3\n");
+      } 
+      else if(data == &wait_timer) {
+        
           if(pop_active) {
         
             length_pop = list_length(bcplist);
-            //printf("Popping. Queue size is %d\n", length_pop);
             if(length_pop > 0){
-             
               rimeaddr_copy(&parent, &rimeaddr_null);
-
               uip_ds6_nbr_t *nbr;
               preferred_parent = bcp_find_best_parent();
-              //printf("This is preferred parent %p\n",preferred_parent);
-
               if(preferred_parent!=NULL){
                   nbr = uip_ds6_nbr_lookup(bcp_get_nbr_ipaddr(preferred_parent));
                   if(nbr != NULL) {
@@ -234,21 +226,14 @@ PROCESS_THREAD(bcp_pop_process, ev, data)    //this thread is responsible for se
                     parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
                     parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
 
-                    //printf("rime addr %d:%d\n",parent.u8[RIMEADDR_SIZE - 1],parent.u8[RIMEADDR_SIZE - 2]);
-                    //parent_etx = 2;
                   }
-          
+
                   uip_ip6addr(&server_ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1]) ;
                   struct bcp_list* temp_element = NULL;
-                  //printf("This is the list length. Popping a packet %d\n", length_pop);
-
                   temp_element = (struct bcp_list*)list_pop(bcplist);
                   packets_pushed -- ;
 
                   if(temp_element!= NULL){
-
-                  //printf("uip-udp-packet.c: We have popped an element and sent it\n");
-
                     uip_ipaddr_t curaddr;
                     uint16_t curport;
 
@@ -260,9 +245,6 @@ PROCESS_THREAD(bcp_pop_process, ev, data)    //this thread is responsible for se
                     /* Load new IP addr/port */
                     uip_ipaddr_copy(&(temp_element->c)->ripaddr, &server_ipaddr);
                     (temp_element->c)->rport = temp_element->toport;
-
-                    //printf("This is the ipaddr %d\n", (temp_element->hdr_info)->sender.u8[0]);
-
                     bcp_uip_udp_packet_send(temp_element->c, temp_element->data, temp_element->len, temp_element->hdr_info);
 
                     /* Restore old IP addr/port */

@@ -56,12 +56,8 @@
 
 extern unsigned short node_id;
 static struct uip_udp_conn *server_conn;
-extern list_t mylist_list;
 static struct uip_udp_conn *client_conn;
 int count =0;
-
-
-
 
 
 /*---------------------------------------------------------------------------*/
@@ -78,22 +74,7 @@ bcp_collect_common_set_sink(void)
 void
 bcp_collect_common_net_print(void)
 {
-  //rpl_dag_t *dag;
-  //uip_ds6_route_t *r;
-
-  /* Let's suppose we have only one instance */
-  //dag = rpl_get_any_dag();
-  /*if(dag->preferred_parent != NULL) {   //insert some code about getting the parent inforamtion
-    PRINTF("Preferred parent: ");
-    PRINT6ADDR(bcp_get_nbr_ipaddr(dag->preferred_parent));   //write a function about getting the ipaddress of the parent
-    PRINTF("\n");
-  }
-  for(r = uip_ds6_route_head();
-      r != NULL;
-      r = uip_ds6_route_next(r)) {
-    PRINT6ADDR(&r->ipaddr);
-  }
-  PRINTF("---\n");*/
+  
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -122,12 +103,8 @@ bcp_tcpip_handler(void)
     hdr_info.hops = UIP_IP_BUF->ttl - 1;  
     hdr_info.sender.u8[0] = sender.u8[0];
     hdr_info.sender.u8[1] = sender.u8[1];
-
-
-   
     msg = appdata ;
   
- 
    if(node_id != 1){
 
    printf("BCP: Receiving packet from: %d\n", sender.u8[0]); 
@@ -149,7 +126,7 @@ void
 bcp_collect_common_send(void)
 {
 
-  if(node_id != 1 && count++ <11){
+  if(node_id != 1 && count++ <100){
       printf("Hi\n");
       static uint8_t seqno;
       struct {
@@ -163,9 +140,6 @@ bcp_collect_common_send(void)
       uint16_t num_neighbors;
       uint16_t beacon_interval;
      
-      //uip_ipaddr_t* addr;
-      //rpl_dag_t *dag;
-
       if(client_conn == NULL) {
         /* Not setup yet */
         return;
@@ -231,11 +205,9 @@ bcp_set_global_address(void)
   uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
 
   /* set server address */
-  
-  
-  
 
 }
+
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_client_process, ev, data)
 {
@@ -245,16 +217,10 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   bcp_set_global_address();
 
-    
-
   PRINTF("UDP client process started\n");
 
   bcp_print_local_addresses();
 
-  bcp_reset_beacon_timer();
-
-  NETSTACK_RDC.off(1);
-   
   /* new connection with remote host */
   client_conn = udp_new(NULL, UIP_HTONS(UDP_SERVER_PORT), NULL);
   udp_bind(client_conn, UIP_HTONS(UDP_CLIENT_PORT));
@@ -269,7 +235,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
         UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
 
 
-  
+  bcp_reset_beacon_timer();  
 
 
   while(1) {
