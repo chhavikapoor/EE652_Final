@@ -41,7 +41,7 @@
 #include "collect-view.h"
 #include "list.h"
 #include "bcp.h" 
-#include "packetstack.h" 
+
 
 #include <stdio.h>
 #include <string.h>
@@ -77,6 +77,11 @@ bcp_collect_common_net_print(void)
   
 }
 /*---------------------------------------------------------------------------*/
+
+/*****************************************************/
+/*     Handler for incoming packets                  */
+/*****************************************************/
+
 static void
 bcp_tcpip_handler(void)
 {
@@ -108,7 +113,7 @@ bcp_tcpip_handler(void)
    if(node_id != 1){
 
    printf("BCP: Receiving packet from: %d\n", sender.u8[0]); 
-   bcp_uip_udp_packet_sendto(client_conn, msg, sizeof(msg1)+2,
+   bcp_uip_udp_push_packet(client_conn, msg, sizeof(msg1)+2,
                          UIP_HTONS(UDP_SERVER_PORT),&hdr_info);
   }
 
@@ -122,12 +127,18 @@ bcp_tcpip_handler(void)
   
 }
 /*---------------------------------------------------------------------------*/
+
+
+
+/*****************************************************/
+/*     Generate and send packets periodically        */
+/*****************************************************/
+
 void
 bcp_collect_common_send(void)
 {
 
   if(node_id != 1 && count++ <100){
-      printf("Hi\n");
       static uint8_t seqno;
       struct {
         uint8_t seqno;
@@ -157,7 +168,7 @@ bcp_collect_common_send(void)
                                      parent_etx, rtmetric,
                                      num_neighbors, beacon_interval);
 
-      bcp_uip_udp_packet_sendto(client_conn, &msg, sizeof(msg),
+      bcp_uip_udp_push_packet(client_conn, &msg, sizeof(msg),
                              UIP_HTONS(UDP_SERVER_PORT), NULL);
   }
 
@@ -203,8 +214,6 @@ bcp_set_global_address(void)
   uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, node_id);
   //uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
   uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
-
-  /* set server address */
 
 }
 

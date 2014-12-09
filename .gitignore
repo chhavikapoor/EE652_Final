@@ -12,7 +12,7 @@
 *.native
 *.z1
 *.minimal-net
-*.sky
+#*.sky
 *.wismote
 *.esb
 *.avr-raven
@@ -33,7 +33,7 @@ summary
 .DS_Store
 obj_*
 symbols.*
-Makefile.target
+#Makefile.target
 doc/html
 patches-*
 tools/tunslip6

@@ -16,9 +16,6 @@
 #include "net/uip-debug.h"
 
 
-
-
-
 extern unsigned short node_id;
 static struct ctimer bcp_periodic_timer;
 static struct ctimer bcp_beacon_timer;
@@ -29,7 +26,7 @@ int etx_val = 1;
 
 /*---------------------------------------------------------------------------*/
 
-NBR_TABLE(bcp_nbr_t, bcp_nbrs);    //#define NBR_TABLE(type, name)   //making a neighbor table
+NBR_TABLE(bcp_nbr_t, bcp_nbrs);   
 
 
 

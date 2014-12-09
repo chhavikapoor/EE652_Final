@@ -1,7 +1,7 @@
 CONTIKI = ../../..
 APPS = powertrace collect-view
-CONTIKI_PROJECT = bcp-sender bcp-sink
-PROJECT_SOURCEFILES += bcp-icmp6.c bcp_collect-common.c packetstack.c
+CONTIKI_PROJECT = bcp-sender
+PROJECT_SOURCEFILES += bcp-icmp6.c bcp_collect-common.c
 
 WITH_UIP6=1
 UIP_CONF_IPV6=1

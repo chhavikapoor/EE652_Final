@@ -49,7 +49,7 @@ extern uint16_t uip_slen;
 
 #include <string.h>
 
-void bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len, uint16_t toport, hdr_information_t*);
+void bcp_uip_udp_push_packet(struct uip_udp_conn *c, const void *data, int len, uint16_t toport, hdr_information_t*);
 void bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_information_t*);
 
 #define PERIOD_POP 1
@@ -122,7 +122,7 @@ bcp_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len, hdr_i
 /*  Push packets into the stack                      */
 /*****************************************************/
 void
-bcp_uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
+bcp_uip_udp_push_packet(struct uip_udp_conn *c, const void *data, int len,
            uint16_t toport, hdr_information_t* hdr_info)
 {
   int length;
