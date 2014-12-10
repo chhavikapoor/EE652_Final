@@ -548,22 +548,20 @@ tcpip_ipv6_output(void)
   uip_ipaddr_t *nexthop;
 
   if(uip_len == 0) {
-    //printf("Returning from tcp_ipv6_output as uip_len =0\n");
-    //printf("E1\n");
+   
     return;
   }
 
   if(uip_len > UIP_LINK_MTU) {
     UIP_LOG("tcpip_ipv6_output: Packet to big");
     uip_len = 0;
-    printf("E2\n");
     return;
   }
 
   if(uip_is_addr_unspecified(&UIP_IP_BUF->destipaddr)){
     UIP_LOG("tcpip_ipv6_output: Destination address unspecified");
     uip_len = 0;
-    printf("E3\n");
+    
     return;
   }
 
@@ -604,7 +602,7 @@ tcpip_ipv6_output(void)
           //printf("no uip fallback\n");
         #endif /* !UIP_FALLBACK_INTERFACE */
           uip_len = 0;
-          printf("E4\n");
+         
           return;
         }
 
@@ -634,7 +632,7 @@ tcpip_ipv6_output(void)
            //printf("Drop no NH\n");
           /* We don't have a nexthop to send the packet to, so we drop
              it. */
-           printf("E5\n");
+          
           return;
         }
       }
@@ -660,7 +658,7 @@ tcpip_ipv6_output(void)
       #if UIP_CONF_IPV6_RPL
     if(rpl_update_header_final(nexthop)) {
       uip_len = 0;
-      printf("E6\n");
+     
       return;
     }
   #endif /* UIP_CONF_IPV6_RPL */
@@ -669,7 +667,7 @@ tcpip_ipv6_output(void)
 #if UIP_ND6_SEND_NA
       if((nbr = uip_ds6_nbr_add(nexthop, NULL, 0, NBR_INCOMPLETE)) == NULL) {
         uip_len = 0;
-        printf("E7\n");
+       
         return;
       } else {
 #if UIP_CONF_IPV6_QUEUE_PKT
@@ -708,7 +706,7 @@ tcpip_ipv6_output(void)
         }
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
         uip_len = 0;
-        printf("E8\n");
+      
         return;
       }
       /* Send in parallel if we are running NUD (nbc state is either STALE,
@@ -739,10 +737,10 @@ tcpip_ipv6_output(void)
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
 
       uip_len = 0;
-      printf("E9\n");
+      
       return;
     }
-    printf("E*\n");
+    
     return;
   }
   /* Multicast IP destination address. */

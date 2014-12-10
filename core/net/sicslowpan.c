@@ -68,17 +68,8 @@
 #include "net/netstack.h"
 #include "list.h"
 
-typedef struct chhavi_list;
 
-struct chhavi_list{
-  struct chhavi_list* next;
-  int number;
-} element1, element2;
-
-LIST(mylist);
- //static int var_chhavi = 2;
- //static int var_2_chhavi = 4;
- static int init_flag = 0;
+static int init_flag = 0;
 
 
 #if UIP_CONF_IPV6

@@ -1,4 +1,18 @@
 
+/* 
+
+* This code has been developed as EE652 final project at Viterbi School of Engineering.
+* Parts of the code have been adapted from the existing RPL implementation available on Contiki 2.7
+* This code shows the basic funcationality  of BCP on IPv6 stack of Contiki
+
+* Authors:
+* Chhavi Kapoor ckapoor@usc.edu
+* Mrunal Muni muni@usc.edu
+
+*/
+
+
+
 #include "contiki.h"
 #include "net/rpl/rpl-private.h"
 #include "net/uip.h"
@@ -21,6 +35,7 @@ static struct ctimer bcp_periodic_timer;
 static struct ctimer bcp_beacon_timer;
 
 int etx_val = 1;
+int link_rate = 1;
 
 
 
@@ -37,37 +52,28 @@ NBR_TABLE(bcp_nbr_t, bcp_nbrs);
 /*****************************************************/
 
 bcp_nbr_t *
-bcp_find_best_parent()
+bcp_find_next_hop()
 {
   /*traverse the list of parents and find the one with lowest queue size*/
-
-   bcp_nbr_t *p = NULL, *temp_parent= NULL;
+   bcp_nbr_t *nbr = NULL, *temp_nbr= NULL;
    int temp_weight = 0;
    int temp_queue_diff = 0;
    uip_ipaddr_t *ip1 = NULL;
    int etx;
    int q_diff;
-  p = nbr_table_head(bcp_nbrs);
+   nbr = nbr_table_head(bcp_nbrs);
 
-  while(p != NULL) {
-      ip1 = bcp_get_nbr_ipaddr(p);
-      /*if((ip1->u8[15]) == 2){
-        printf("Node id %d\n", ip1->u8[15]);
-        etx_val = 1;
-        }
-        else{
-          printf("Node id %d\n", ip1->u8[15]);
-        etx_val = 1;
-        }*/
-      temp_queue_diff = (get_list_length()- p->queue_size);
-      printf("BCP: Node ID of neighbor is %d the queue difference is %d and the etx value is %d\n", ip1->u8[15], temp_queue_diff, etx_val);
-    if(temp_weight < (get_list_length()- p->queue_size ) - etx_val) {
-        temp_weight = get_list_length()- p->queue_size - etx_val;
-        temp_parent =  p;
+  while(nbr != NULL) {
+      ip1 = bcp_get_nbr_ipaddr(nbr);
+      temp_queue_diff = (get_list_length()- nbr->queue_size);
+      //printf("BCP: Node ID of neighbor is %d the queue difference is %d and the etx value is %d\n", ip1->u8[15], temp_queue_diff, etx_val);
+    if(temp_weight < ((get_list_length()- nbr->queue_size ) - etx_val)*link_rate) {
+        temp_weight = (get_list_length()- nbr->queue_size - etx_val)*link_rate;
+        temp_nbr =  nbr;
         etx = etx_val;
         q_diff = temp_queue_diff;
       }
-      p = nbr_table_next(bcp_nbrs, p);
+      nbr = nbr_table_next(bcp_nbrs, nbr);
     
   }
 
@@ -75,13 +81,13 @@ bcp_find_best_parent()
 
     uip_ipaddr_t *ip = NULL;
   
-    ip = bcp_get_nbr_ipaddr(temp_parent);
-    printf("BCP: Node ID of best parent is %d the queue difference is %d and the etx value is %d\n", ip->u8[15], q_diff, etx);
-    //printf("best parent weight is %d\n", temp_weight); 
-    return temp_parent;
+    ip = bcp_get_nbr_ipaddr(temp_nbr);
+    //printf("BCP: Node ID of best parent is %d the queue difference is %d and the etx value is %d\n", ip->u8[15], q_diff, etx);
+     
+    return temp_nbr;
   }
   else{
-    //printf("No parent with positive weight\n");
+    /*No parent with positive weight*/
     return NULL;
   }
 
@@ -164,7 +170,7 @@ bcp_remove_nbr(bcp_nbr_t *nbr)
   PRINTF("\n");
   ip = bcp_get_nbr_ipaddr(nbr);
   
-  printf("Timer: Neighbor timer expired. Remove neighbor %d\n", ip->u8[15]);
+  //printf("Timer: Neighbor timer expired. Remove neighbor %d\n", ip->u8[15]);
 
   nbr_table_remove(bcp_nbrs, nbr);
 }
@@ -187,7 +193,7 @@ bcp_add_nbr( bcp_beacon_t *beacon, uip_ipaddr_t *addr)
     p = nbr_table_add_lladdr(bcp_nbrs, (rimeaddr_t *)lladdr);
     p->queue_size = beacon->queue_size;   
     p->etx = beacon->etx;
-    printf("Timer: Setting timer\n");
+    //printf("Timer: Setting timer\n");
     ctimer_set(&p->nbr_timer, 10*CLOCK_SECOND, &handle_nbr_timer, p);
   }
 
@@ -204,19 +210,18 @@ void
 bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *beacon)
 {
  
-        bcp_nbr_t* parent = NULL;
-        //printf("BCP process beacon\n");
-
-        if( (parent = bcp_find_nbr(from)) != NULL){
+      bcp_nbr_t* parent = NULL;
+  
+      if( (parent = bcp_find_nbr(from)) != NULL){
 
            parent->etx = beacon->etx;
            parent->queue_size = beacon->queue_size;  //weight setting other parameters as one
-           printf("Timer: Resetting timer for %d\n", from->u8[15]);
+           //printf("Timer: Resetting timer for %d\n", from->u8[15]);
            ctimer_set(&parent->nbr_timer, 10*CLOCK_SECOND, &handle_nbr_timer, parent);
-           //printf("Found a bcp neighbor\n");
+         
         }
         else{
-          //printf("Add bcp neighbor\n");
+         
           bcp_add_nbr(beacon,from);
         }
 

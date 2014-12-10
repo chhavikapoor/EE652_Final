@@ -89,6 +89,19 @@ MEMB(hdr_memb, struct hdr_information,MAX_STACK_LENGTH);
 
 /*****************************************************/
 /*  Send popped packet for transmission              */
+
+
+/* 
+
+* This code has been developed as EE652 final project at Viterbi School of Engineering.
+* Parts of the code have been adapted from the existing RPL implementation available on Contiki 2.7
+* This code shows the basic funcationality  of BCP on IPv6 stack of Contiki
+
+* Authors:
+* Chhavi Kapoor ckapoor@usc.edu
+* Mrunal Muni muni@usc.edu
+
+*/
 /*****************************************************/
 
 
@@ -150,7 +163,6 @@ bcp_uip_udp_push_packet(struct uip_udp_conn *c, const void *data, int len,
        queue_element->c = c;
        queue_element->data = temp_msg;
        queue_element->len = len;
-       //queue_element->toaddr = toaddr;
        queue_element->toport = toport;
        if(hdr_info!=NULL){
         queue_element->hdr_info = temp_hdr_info;
@@ -177,6 +189,18 @@ bcp_uip_udp_push_packet(struct uip_udp_conn *c, const void *data, int len,
 
 /*****************************************************/
 /*            Get stack occupancy                    */
+
+/* 
+
+* This code has been developed as EE652 final project at Viterbi School of Engineering.
+* Parts of the code have been adapted from the existing RPL implementation available on Contiki 2.7
+* This code shows the basic funcationality  of BCP on IPv6 stack of Contiki
+
+* Authors:
+* Chhavi Kapoor ckapoor@usc.edu
+* Mrunal Muni muni@usc.edu
+
+*/
 /*****************************************************/
 
 int get_list_length(){
@@ -189,13 +213,25 @@ int get_list_length(){
 
 /*****************************************************/
 /*   Pop packets from the stack                      */
+
+/* 
+
+* This code has been developed as EE652 final project at Viterbi School of Engineering.
+* Parts of the code have been adapted from the existing RPL implementation available on Contiki 2.7
+* This code shows the basic funcationality  of BCP on IPv6 stack of Contiki
+
+* Authors:
+* Chhavi Kapoor ckapoor@usc.edu
+* Mrunal Muni muni@usc.edu
+
+*/
 /*****************************************************/
 
 PROCESS_THREAD(bcp_pop_process, ev, data)    
 {
   static struct etimer period_timer, wait_timer;
-  bcp_nbr_t *preferred_parent;
-  rimeaddr_t parent;
+  bcp_nbr_t *preferred_nbr;
+  rimeaddr_t nbr_addr;
   int length_pop = 0;
 
   PROCESS_BEGIN();
@@ -216,15 +252,15 @@ PROCESS_THREAD(bcp_pop_process, ev, data)
         
             length_pop = list_length(bcplist);
             if(length_pop > 0){
-              rimeaddr_copy(&parent, &rimeaddr_null);
+              rimeaddr_copy(&nbr_addr, &rimeaddr_null);
               uip_ds6_nbr_t *nbr;
-              preferred_parent = bcp_find_best_parent();
-              if(preferred_parent!=NULL){
-                  nbr = uip_ds6_nbr_lookup(bcp_get_nbr_ipaddr(preferred_parent));
+              preferred_nbr = bcp_find_next_hop();
+              if(preferred_nbr!=NULL){
+                  nbr = uip_ds6_nbr_lookup(bcp_get_nbr_ipaddr(preferred_nbr));
                   if(nbr != NULL) {
                     /* Use parts of the IPv6 address as the parent address, in reversed byte order. */
-                    parent.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
-                    parent.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
+                    nbr_addr.u8[RIMEADDR_SIZE - 1] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 2];
+                    nbr_addr.u8[RIMEADDR_SIZE - 2] = nbr->ipaddr.u8[sizeof(uip_ipaddr_t) - 1];
 
                   }
 
@@ -237,7 +273,7 @@ PROCESS_THREAD(bcp_pop_process, ev, data)
                     uip_ipaddr_t curaddr;
                     uint16_t curport;
 
-                    //if(temp_element->toaddr != NULL) {
+                    
                     /* Save current IP addr/port. */
                     uip_ipaddr_copy(&curaddr, &(temp_element->c)->ripaddr);
                     curport = (temp_element->c)->rport;

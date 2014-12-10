@@ -2305,9 +2305,50 @@ uip_process(uint8_t flag)
   return;
 }
 
-void bcp_uip_process(hdr_information_t* hdr_info){
 
-  printf("In bcp udp_send\n");
+
+
+/*---------------------------------------------------------------------------*/
+uint16_t
+uip_htons(uint16_t val)
+{
+  return UIP_HTONS(val);
+}
+
+uint32_t
+uip_htonl(uint32_t val)
+{
+  return UIP_HTONL(val);
+}
+/*---------------------------------------------------------------------------*/
+void
+uip_send(const void *data, int len)
+{
+  int copylen;
+#define MIN(a,b) ((a) < (b)? (a): (b))
+  copylen = MIN(len, UIP_BUFSIZE - UIP_LLH_LEN - UIP_TCPIP_HLEN -
+                (int)((char *)uip_sappdata - (char *)&uip_buf[UIP_LLH_LEN + UIP_TCPIP_HLEN]));
+  if(copylen > 0) {
+    uip_slen = copylen;
+    if(data != uip_sappdata) {
+      memcpy(uip_sappdata, (data), uip_slen);
+    }
+  }
+}
+
+/* 
+
+* This code has been developed as EE652 final project at Viterbi School of Engineering.
+* Parts of the code have been adapted from the existing RPL implementation available on Contiki 2.7
+* This code shows the basic funcationality  of BCP on IPv6 stack of Contiki
+
+* Authors:
+* Chhavi Kapoor ckapoor@usc.edu
+* Mrunal Muni muni@usc.edu
+
+*/
+
+void bcp_uip_process(hdr_information_t* hdr_info){
 
   if(uip_slen == 0) {
     goto drop_bcp;
@@ -2378,33 +2419,10 @@ void bcp_uip_process(hdr_information_t* hdr_info){
   return;
 
 }
-/*---------------------------------------------------------------------------*/
-uint16_t
-uip_htons(uint16_t val)
-{
-  return UIP_HTONS(val);
-}
 
-uint32_t
-uip_htonl(uint32_t val)
-{
-  return UIP_HTONL(val);
-}
-/*---------------------------------------------------------------------------*/
-void
-uip_send(const void *data, int len)
-{
-  int copylen;
-#define MIN(a,b) ((a) < (b)? (a): (b))
-  copylen = MIN(len, UIP_BUFSIZE - UIP_LLH_LEN - UIP_TCPIP_HLEN -
-                (int)((char *)uip_sappdata - (char *)&uip_buf[UIP_LLH_LEN + UIP_TCPIP_HLEN]));
-  if(copylen > 0) {
-    uip_slen = copylen;
-    if(data != uip_sappdata) {
-      memcpy(uip_sappdata, (data), uip_slen);
-    }
-  }
-}
+
+
+
 /*---------------------------------------------------------------------------*/
 /** @} */
 #endif /* UIP_CONF_IPV6 */

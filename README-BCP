@@ -1,0 +1,11 @@
+This files gives the steps that need to be followed to test the BCP code on Contiki 2.7
+
+1) Navigate to the location  /examples/ipv6/bcp-collect
+2) Compile the code using the command make TARGET=sky
+3) bcp-sender.sky should be created on successful compilation
+4) Navigte to location /tools/cooja
+5) Compile the tool using the command ant run
+6) When the GUI is launched create a new simulation of type UDGM.
+7) Add sky motes to the simulation and load them with the file bcp-sender.sky
+8) Node 1 acts as the sink. Create the topology of your choice.
+9) Click on Start and observe the print statements on the mote output window.
