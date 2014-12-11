@@ -22,14 +22,14 @@
 struct bcp_nbr {
   struct bcp_nbr *next;
   uint8_t queue_size;
-  uint8_t etx;
+  uint8_t reserved;
   struct ctimer nbr_timer;
 };
 typedef struct bcp_nbr bcp_nbr_t;
 
 struct bcp_beacon {
   uint8_t queue_size;
-  uint8_t etx;	
+  uint8_t reserved;	
 };
 typedef struct bcp_beacon bcp_beacon_t;
 

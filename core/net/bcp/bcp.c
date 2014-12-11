@@ -48,13 +48,13 @@ NBR_TABLE(bcp_nbr_t, bcp_nbrs);
 
 
 /*****************************************************/
-/*           Find best parent from neighbor list     */
+/*           Find best next hop from neighbor list     */
 /*****************************************************/
 
 bcp_nbr_t *
 bcp_find_next_hop()
 {
-  /*traverse the list of parents and find the one with lowest queue size*/
+  /*traverse the list of neighbor and find the one with lowest queue size*/
    bcp_nbr_t *nbr = NULL, *temp_nbr= NULL;
    int temp_weight = 0;
    int temp_queue_diff = 0;
@@ -82,12 +82,11 @@ bcp_find_next_hop()
     uip_ipaddr_t *ip = NULL;
   
     ip = bcp_get_nbr_ipaddr(temp_nbr);
-    //printf("BCP: Node ID of best parent is %d the queue difference is %d and the etx value is %d\n", ip->u8[15], q_diff, etx);
      
     return temp_nbr;
   }
   else{
-    /*No parent with positive weight*/
+    /*No neighbor with positive weight*/
     return NULL;
   }
 
@@ -115,12 +114,12 @@ bcp_find_nbr(uip_ipaddr_t *addr)
 uip_ipaddr_t *
 bcp_get_nbr_ipaddr(bcp_nbr_t *p)
 {
-  //printf("this is the found parent %d\n", p->queue_size);
+  
   uip_ipaddr_t* ipaddress = NULL;
   rimeaddr_t *lladdr = nbr_table_get_lladdr(bcp_nbrs, p);
 
   ipaddress = uip_ds6_nbr_ipaddr_from_lladdr((uip_lladdr_t *)lladdr);
-  //printf("We found this IP %d \n", ipaddress->u8[15]);
+  
   return ipaddress;
 }
 
@@ -184,21 +183,21 @@ bcp_nbr_t *
 bcp_add_nbr( bcp_beacon_t *beacon, uip_ipaddr_t *addr)
 {
   //printf("bcp.c: we are adding a neighbor over here\n");
-  bcp_nbr_t *p = NULL;
+  bcp_nbr_t *neighbor = NULL;
  
   uip_lladdr_t *lladdr = uip_ds6_nbr_lladdr_from_ipaddr(addr);
   if(lladdr != NULL) {
 
     /*Add a neighbor*/
-    p = nbr_table_add_lladdr(bcp_nbrs, (rimeaddr_t *)lladdr);
-    p->queue_size = beacon->queue_size;   
-    p->etx = beacon->etx;
+    neighbor = nbr_table_add_lladdr(bcp_nbrs, (rimeaddr_t *)lladdr);
+    neighbor->queue_size = beacon->queue_size;   
+    neighbor->reserved = beacon->reserved;
     //printf("Timer: Setting timer\n");
-    ctimer_set(&p->nbr_timer, 10*CLOCK_SECOND, &handle_nbr_timer, p);
+    ctimer_set(&neighbor->nbr_timer, 10*CLOCK_SECOND, &handle_nbr_timer, neighbor);
   }
 
 
-  return p;
+  return neighbor;
 }
 
 
@@ -210,14 +209,14 @@ void
 bcp_process_beacon(uip_ipaddr_t *from, bcp_beacon_t *beacon)
 {
  
-      bcp_nbr_t* parent = NULL;
+      bcp_nbr_t* nbr = NULL;
   
-      if( (parent = bcp_find_nbr(from)) != NULL){
+      if( (nbr = bcp_find_nbr(from)) != NULL){
 
-           parent->etx = beacon->etx;
-           parent->queue_size = beacon->queue_size;  //weight setting other parameters as one
+           nbr->reserved = beacon->reserved;
+           nbr->queue_size = beacon->queue_size;  //weight setting other parameters as one
            //printf("Timer: Resetting timer for %d\n", from->u8[15]);
-           ctimer_set(&parent->nbr_timer, 10*CLOCK_SECOND, &handle_nbr_timer, parent);
+           ctimer_set(&nbr->nbr_timer, 10*CLOCK_SECOND, &handle_nbr_timer, nbr);
          
         }
         else{

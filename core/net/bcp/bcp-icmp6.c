@@ -89,7 +89,7 @@ beacon_input(void)
   i = 0;
   buffer = UIP_ICMP_PAYLOAD;
   beacon.queue_size = buffer[i++];   
-  beacon.etx = buffer[i++];
+  beacon.reserved = buffer[i++];
 
   bcp_process_beacon(&from, &beacon);
 }
@@ -120,7 +120,7 @@ beacon_output(uip_ipaddr_t *uc_addr)
    buffer[pos++] = get_list_length();    
    printf("BCP: Sending queue size in beacon %d\n", buffer[pos -1 ]);
   }
-  buffer[pos++] = 1;
+  buffer[pos++] = 1;  //reserved
 
   uip_create_linklocal_bcpnodes_mcast(&addr);
   uip_icmp6_send(&addr, ICMP6_RPL, BCP_CODE_BEACON, pos);
@@ -136,7 +136,6 @@ void
 uip_bcp_input(void)
 {
 
-   //beacon_input();
   PRINTF("Received an BCP control message\n");
   switch(UIP_ICMP_BUF->icode) {
   case BCP_CODE_BEACON:
