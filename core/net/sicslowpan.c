@@ -66,6 +66,11 @@
 #include "net/rime.h"
 #include "net/sicslowpan.h"
 #include "net/netstack.h"
+#include "list.h"
+
+
+static int init_flag = 0;
+
 
 #if UIP_CONF_IPV6
 
@@ -73,6 +78,10 @@
 
 #define DEBUG DEBUG_NONE
 #include "net/uip-debug.h"
+
+ list_t test_list;
+ #define MAX_QUEUE_LENGTH 2
+ //int packets_pushed = 0;
 #if DEBUG
 /* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
 uint8_t p;
@@ -256,6 +265,10 @@ static struct timer reass_timer;
 #define sicslowpan_buf uip_buf
 #define sicslowpan_len uip_len
 #endif /* SICSLOWPAN_CONF_FRAG */
+
+
+
+
 
 /*-------------------------------------------------------------------------*/
 /* Rime Sniffer support for one single listener to enable powertrace of IP */
@@ -488,6 +501,7 @@ uncompress_addr(uip_ipaddr_t *ipaddr, uint8_t const prefix[],
 static void
 compress_hdr_hc06(rimeaddr_t *rime_destaddr)
 {
+  //printf("sicslowpan.c: we are in compress_hdr_hc06\n");
   uint8_t tmp, iphc0, iphc1;
 #if DEBUG
   { uint16_t ndx;
@@ -1356,10 +1370,12 @@ send_packet(rimeaddr_t *dest)
 static uint8_t
 output(uip_lladdr_t *localdest)
 {
+  //printf("sicslowpan.c: We are inside output function\n");
   int framer_hdrlen;
 
   /* The MAC address of the destination of the packet */
   rimeaddr_t dest;
+  
 
   /* Number of bytes processed. */
   uint16_t processed_ip_out_len;
@@ -1370,7 +1386,9 @@ output(uip_lladdr_t *localdest)
 
   /* reset rime buffer */
   packetbuf_clear();
-  rime_ptr = packetbuf_dataptr();
+
+  uint8_t *temp_rime_ptr = NULL; 
+   rime_ptr = packetbuf_dataptr();     //rime_ptr will point to packetbuf
 
   packetbuf_set_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS,
                      SICSLOWPAN_MAX_MAC_TRANSMISSIONS);
@@ -1408,22 +1426,29 @@ output(uip_lladdr_t *localdest)
   }
   
   PRINTFO("sicslowpan output: sending packet len %d\n", uip_len);
+  //printf("sicslowpan.c: sicslowpan output: sending packet len %d\n", uip_len);
 
   if(uip_len >= COMPRESSION_THRESHOLD) {
     /* Try to compress the headers */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1
+    //printf("sicslowpan.c: Compression HC1\n");
     compress_hdr_hc1(&dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1 */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6
+    //printf("sicslowpan.c: Compression IPv6\n");
     compress_hdr_ipv6(&dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6 */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06
+    //printf("sicslowpan.c: Compression HC06\n");
     compress_hdr_hc06(&dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06 */
   } else {
+    //printf("sicslowpan.c: Compression none of above\n");
     compress_hdr_ipv6(&dest);
   }
   PRINTFO("sicslowpan output: header of len %d\n", rime_hdr_len);
+ 
+  //printf("sicslowpan.c: sicslowpan output: header of len %d\n", rime_hdr_len);
 
   /* Calculate NETSTACK_FRAMER's header length, that will be added in the NETSTACK_RDC.
    * We calculate it here only to make a better decision of whether the outgoing packet
@@ -1449,6 +1474,8 @@ output(uip_lladdr_t *localdest)
 
   if((int)uip_len - (int)uncomp_hdr_len > (int)MAC_MAX_PAYLOAD - framer_hdrlen - (int)rime_hdr_len) {
 #if SICSLOWPAN_CONF_FRAG
+
+    //printf("sicslowpan.c: sending packet with fragmentation\n");
     struct queuebuf *q;
     /*
      * The outbound IPv6 packet is too large to fit into a single 15.4
@@ -1560,9 +1587,16 @@ output(uip_lladdr_t *localdest)
      * The packet does not need to be fragmented
      * copy "payload" and send
      */
+
+    //This is where we are inserting the list 
+    //("sicslowpan.c: sending packet without fragmentation\n");
+    /*printf("we can insert the queue over here to buffer the packet\n");*/
+
+
     memcpy(rime_ptr + rime_hdr_len, (uint8_t *)UIP_IP_BUF + uncomp_hdr_len,
            uip_len - uncomp_hdr_len);
     packetbuf_set_datalen(uip_len - uncomp_hdr_len + rime_hdr_len);
+  
     send_packet(&dest);
   }
   return 1;
